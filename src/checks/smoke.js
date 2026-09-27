@@ -62,7 +62,7 @@ export async function smokeTest(skill, harness) {
       step('discovery', false, `loader threw: ${err.message}`);
     }
 
-    const scripts = (staged ? staged.files : skill.files).filter((f) => SCRIPT_RE.test(f));
+    const scripts = (staged ? staged.files : skill.files).filter((f) => SCRIPT_RE.test(f) && INTERPRETERS.some((i) => i.test(f)));
     if (scripts.length === 0) {
       step('scripts', true, 'no scripts declared');
     } else {

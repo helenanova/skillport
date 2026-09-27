@@ -42,7 +42,7 @@ test('--markdown emits a harness table', async () => {
 test('fixtures command runs the whole set', async () => {
   const { stdout } = await run('node', [bin, 'fixtures', '--json']);
   const reports = JSON.parse(stdout);
-  assert.equal(reports.length, 11);
+  assert.equal(reports.length, 16);
 });
 
 test('check without a path exits 2', async () => {

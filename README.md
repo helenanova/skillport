@@ -3,15 +3,14 @@
 **One agent skill. Every harness. Know exactly where it breaks.**
 
 SkillPort is a portability test for agent skills. Point it at one skill folder
-(`SKILL.md` + `references/` + `scripts/`) and it loads and runs that skill the
-way each agent harness would - Claude Code, Codex, Cursor - and shows you the
-exact compatibility errors instead of letting you find out after you publish.
+(`SKILL.md` + `references/` + `scripts/`) and it checks format compatibility for Claude Code, Codex and Cursor. For
+Claude Code and Codex it also stages and re-loads the skill in a sandbox and
+syntax-checks known script types. It does not run the native harness CLIs.
 
 ![SkillPort demo: one skill, three harnesses, one red - then all green](docs/demo.svg)
 
-A skill that loads fine in Claude Code can silently fail in Codex (strict
-manifest parsing) or convert to an empty rule in Cursor (no body). SkillPort
-answers one question: **does it actually run everywhere?**
+A skill may pass one set of checks yet fail another. SkillPort catches
+known compatibility errors before you publish. Cursor checks are static only.
 
 ## Quickstart
 
@@ -29,8 +28,8 @@ npx skillport check path/to/my-skill
 npx skillport fixtures
 ```
 
-Exit code is `0` when the skill loads on every harness, `1` when anything
-breaks - so it drops straight into CI:
+Exit code is `0` when all selected SkillPort checks pass, `1` on a detected
+error - so it drops straight into CI:
 
 ```yaml
 - run: npx skillport check my-skill/
@@ -55,7 +54,7 @@ breaks - so it drops straight into CI:
 
 **Smoke test** (MVP definition): the skill is copied into a throwaway sandbox
 at the path the harness expects (`~/.claude/skills/<name>`, `~/.codex/skills/<name>`),
-re-loaded through the same discovery rules, and every declared script gets an
+re-loaded through the same discovery rules, and known script types get an
 interpreter check plus a syntax check (`node --check`, `python3 -m py_compile`,
 `bash -n`). Staging is emulated, so CI needs no vendor accounts; if a harness
 CLI is installed locally SkillPort notes it. Native CLI invocations and
@@ -69,21 +68,22 @@ npx skillport check my-skill --markdown   # GitHub-Flavored Markdown
 npx skillport check my-skill --out report.md
 ```
 
-The repo's own CI publishes the Markdown report for all eleven bundled fixtures
+The repo's own CI publishes the Markdown report for all sixteen bundled fixtures
 to the GitHub Actions job summary on every push.
 
-## The eleven fixtures
+## The sixteen fixtures
 
 `fixtures/` ships the failures we kept hitting by hand, so the tool is tested
 against real breakage: missing `SKILL.md`, broken reference paths, missing
 frontmatter, invalid names, absolute paths, script syntax errors, oversized
-descriptions, declared-but-missing scripts - plus two known-good skills.
+descriptions, declared-but-missing scripts, escaping symlinks and spec field
+limits - plus known-good skills.
 `npm run check:fixtures` asserts every fixture produces its expected verdict.
 
 ## What SkillPort is not
 
 Not a marketplace, not a security scanner, not a skill registry. It answers
-"does this skill actually load and run on each harness?" and stops there.
+"do these portability checks pass?" and stops there.
 
 ## Roadmap
 
@@ -94,8 +94,8 @@ Not a marketplace, not a security scanner, not a skill registry. It answers
 
 ## Known MVP trade-offs
 
-- The frontmatter parser covers the manifest subset skills actually use
-  (scalars and block lists), not full YAML.
+- The frontmatter parser covers scalar keys, block lists, and one-level
+  `metadata` mappings, not full YAML.
 - Cursor support is static-only: Cursor consumes skills as converted rules,
   and the converter itself is on the roadmap.
 

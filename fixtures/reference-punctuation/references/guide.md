@@ -1,0 +1,2 @@
+# Guide
+Use short examples.

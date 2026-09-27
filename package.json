@@ -1,7 +1,7 @@
 {
   "name": "skillport",
   "version": "0.1.0",
-  "description": "Portability test for agent skills: load and run one skill across multiple agent harnesses and see exactly where it breaks.",
+  "description": "Portability test for agent skills: check one skill for known compatibility errors across multiple agent harnesses.",
   "type": "module",
   "bin": {
     "skillport": "bin/skillport.js"

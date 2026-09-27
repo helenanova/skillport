@@ -34,7 +34,7 @@ export function formatText(result) {
   }
   lines.push('');
   lines.push(result.ok
-    ? `Result: PASS - skill loads on all ${Object.keys(result.harnesses).length} harnesses (${result.summary.warnings} warning(s))`
+    ? `Result: PASS - SkillPort checks pass for ${Object.keys(result.harnesses).length} harnesses (${result.summary.warnings} warning(s))`
     : `Result: FAIL - ${result.summary.errors} error(s), ${result.summary.warnings} warning(s)`);
   return lines.join('\n');
 }

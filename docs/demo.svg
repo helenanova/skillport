@@ -1,43 +1,33 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="723" height="820" viewBox="0 0 723 820" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13">
-<rect width="100%" height="100%" rx="8" fill="#0d1117"/>
-<circle cx="24" cy="20" r="5" fill="#ff5f57"/><circle cx="42" cy="20" r="5" fill="#febc2e"/><circle cx="60" cy="20" r="5" fill="#28c840"/>
-<text x="361.5" y="24" fill="#8b949e" text-anchor="middle">skillport demo - one skill, three harnesses</text>
-<text x="18" y="58" fill="#8b949e">$ skillport check my-skill/   # before the fix</text>
-<text x="18" y="78" fill="#c9d1d9"> </text>
-<text x="18" y="98" fill="#c9d1d9">SkillPort portability report: broken-reference-path</text>
-<text x="18" y="118" fill="#c9d1d9"> </text>
-<text x="18" y="138" fill="#c9d1d9">Format checks:  ✗ 1 error(s)</text>
-<text x="18" y="158" fill="#ff7b72">  ✗ [ref-exists] referenced file "references/style-guide.md" does not exist in the skill</text>
-<text x="18" y="178" fill="#c9d1d9"> </text>
-<text x="18" y="198" fill="#c9d1d9">Harness compatibility:</text>
-<text x="18" y="218" fill="#ff7b72">  ✗ Claude Code  (static + smoke)</text>
-<text x="18" y="238" fill="#3fb950">    ✓ discovery: loaded "broken-reference-path" (2 files)</text>
-<text x="18" y="258" fill="#3fb950">    ✓ scripts: no scripts declared</text>
-<text x="18" y="278" fill="#ff7b72">  ✗ Codex        (static + smoke)</text>
-<text x="18" y="298" fill="#3fb950">    ✓ discovery: loaded "broken-reference-path" (2 files)</text>
-<text x="18" y="318" fill="#3fb950">    ✓ scripts: no scripts declared</text>
-<text x="18" y="338" fill="#ff7b72">  ✗ Cursor       (static only)</text>
-<text x="18" y="358" fill="#c9d1d9"> </text>
-<text x="18" y="378" fill="#ff7b72">Result: FAIL - 1 error(s), 0 warning(s)</text>
-<text x="18" y="398" fill="#c9d1d9"> </text>
-<text x="18" y="418" fill="#8b949e"># add the missing references/style-guide.md ...</text>
-<text x="18" y="438" fill="#c9d1d9"> </text>
-<text x="18" y="458" fill="#8b949e">$ skillport check my-skill/   # after the fix</text>
-<text x="18" y="478" fill="#c9d1d9"> </text>
-<text x="18" y="498" fill="#c9d1d9">SkillPort portability report: valid-full</text>
-<text x="18" y="518" fill="#c9d1d9"> </text>
-<text x="18" y="538" fill="#3fb950">Format checks:  ✓ clean</text>
-<text x="18" y="558" fill="#c9d1d9"> </text>
-<text x="18" y="578" fill="#c9d1d9">Harness compatibility:</text>
-<text x="18" y="598" fill="#3fb950">  ✓ Claude Code  (static + smoke)</text>
-<text x="18" y="618" fill="#3fb950">    ✓ discovery: loaded "valid-full" (4 files)</text>
-<text x="18" y="638" fill="#3fb950">    ✓ script scripts/build-report.js: node syntax check passed</text>
-<text x="18" y="658" fill="#3fb950">    ✓ script scripts/check.sh: bash syntax check passed</text>
-<text x="18" y="678" fill="#3fb950">  ✓ Codex        (static + smoke)</text>
-<text x="18" y="698" fill="#3fb950">    ✓ discovery: loaded "valid-full" (4 files)</text>
-<text x="18" y="718" fill="#3fb950">    ✓ script scripts/build-report.js: node syntax check passed</text>
-<text x="18" y="738" fill="#3fb950">    ✓ script scripts/check.sh: bash syntax check passed</text>
-<text x="18" y="758" fill="#3fb950">  ✓ Cursor       (static only)</text>
-<text x="18" y="778" fill="#c9d1d9"> </text>
-<text x="18" y="798" fill="#3fb950">Result: PASS - skill loads on all 3 harnesses (0 warning(s))</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540" font-family="DejaVu Sans, Arial, sans-serif">
+<rect width="960" height="540" fill="#0d1117"/>
+<rect x="20" y="20" width="920" height="500" rx="18" fill="#161b22" stroke="#30363d" stroke-width="2"/>
+<text x="46" y="66" font-size="29" fill="#e6edf3">SkillPort</text>
+<text x="46" y="100" font-size="17" fill="#8b949e">Same skill, before and after adding a missing reference</text>
+<rect x="46" y="138" width="420" height="310" rx="10" fill="#0d1117" stroke="#f85149" stroke-width="2"/>
+<text x="64" y="173" font-size="21" fill="#f85149">BEFORE</text>
+<text x="64" y="204" font-size="16" fill="#e6edf3">broken-reference-path/</text>
+<text x="64" y="238" font-size="15" fill="#f85149">references/style-guide.md missing</text>
+<text x="64" y="281" font-size="16" fill="#c9d1d9">Claude Code</text>
+<text x="211" y="281" font-size="12" fill="#8b949e">staged + syntax</text>
+<text x="391" y="281" font-size="16" fill="#f85149">FAIL</text>
+<text x="64" y="329" font-size="16" fill="#c9d1d9">Codex</text>
+<text x="211" y="329" font-size="12" fill="#8b949e">staged + syntax</text>
+<text x="391" y="329" font-size="16" fill="#f85149">FAIL</text>
+<text x="64" y="377" font-size="16" fill="#c9d1d9">Cursor</text>
+<text x="211" y="377" font-size="12" fill="#8b949e">static only</text>
+<text x="391" y="377" font-size="16" fill="#f85149">FAIL</text>
+<rect x="494" y="138" width="420" height="310" rx="10" fill="#0d1117" stroke="#3fb950" stroke-width="2"/>
+<text x="512" y="173" font-size="21" fill="#3fb950">AFTER</text>
+<text x="512" y="204" font-size="16" fill="#e6edf3">broken-reference-path/</text>
+<text x="512" y="238" font-size="15" fill="#3fb950">Add references/style-guide.md</text>
+<text x="512" y="281" font-size="16" fill="#c9d1d9">Claude Code</text>
+<text x="659" y="281" font-size="12" fill="#8b949e">staged + syntax</text>
+<text x="839" y="281" font-size="16" fill="#3fb950">PASS</text>
+<text x="512" y="329" font-size="16" fill="#c9d1d9">Codex</text>
+<text x="659" y="329" font-size="12" fill="#8b949e">staged + syntax</text>
+<text x="839" y="329" font-size="16" fill="#3fb950">PASS</text>
+<text x="512" y="377" font-size="16" fill="#c9d1d9">Cursor</text>
+<text x="659" y="377" font-size="12" fill="#8b949e">static only</text>
+<text x="839" y="377" font-size="16" fill="#3fb950">PASS</text>
+<text x="46" y="482" font-size="14" fill="#8b949e">Compatibility checks, not native harness execution</text>
 </svg>

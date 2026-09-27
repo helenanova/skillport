@@ -29,6 +29,35 @@ test('official-example metadata mapping passes on all three checks', async () =>
   for (const h of Object.values(r.harnesses)) assert.equal(h.ok, true);
 });
 
+test('ordinary prose punctuation does not break reference lookup', async () => {
+  const r = await checkSkill(fx('reference-punctuation'));
+  assert.equal(r.ok, true);
+});
+
+test('non-code scripts asset is not treated as an executable', async () => {
+  const r = await checkSkill(fx('script-data'));
+  assert.equal(r.ok, true);
+  for (const h of Object.values(r.harnesses)) {
+    assert.equal(h.steps.some((s) => s.name === 'script scripts/data.json'), false);
+  }
+});
+
+test('escaping symlink fails before copying or syntax checking', async () => {
+  const r = await checkSkill(fx('symlink-escape'));
+  assert.equal(r.ok, false);
+  assert.ok(r.static.issues.some((i) => i.rule === 'symlink-escape'));
+  assert.equal(r.harnesses['claude-code'].smokeTested, false);
+});
+
+test('out-of-spec compatibility length and empty metadata value fail', async () => {
+  const compatibility = await checkSkill(fx('compatibility-oversized'));
+  assert.equal(compatibility.ok, false);
+  assert.ok(compatibility.static.issues.some((i) => i.rule === 'compatibility-format'));
+  const metadata = await checkSkill(fx('metadata-empty-value'));
+  assert.equal(metadata.ok, false);
+  assert.ok(metadata.static.issues.some((i) => i.rule === 'metadata-format'));
+});
+
 test('missing SKILL.md is fatal for every harness', async () => {
   const r = await checkSkill(fx('missing-skill-md'));
   assert.equal(r.ok, false);

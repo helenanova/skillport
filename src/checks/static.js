@@ -77,7 +77,22 @@ export function runStaticChecks(skill) {
     }
   }
 
-  // Symlinks escaping the skill root break every harness installer.
+  // Symlinks escaping the skill root break installers and can expose local files.
+  for (const f of skill.escapingSymlinks) {
+    push('error', 'symlink-escape', `symlink "${f}" points outside the skill directory or is broken`);
+  }
+  if (skill.frontmatter.compatibility !== undefined &&
+      (typeof skill.frontmatter.compatibility !== 'string' ||
+       skill.frontmatter.compatibility.length === 0 ||
+       skill.frontmatter.compatibility.length > 500)) {
+    push('error', 'compatibility-format', 'compatibility must be a non-empty string of at most 500 characters', 'SKILL.md');
+  }
+  const metadata = skill.frontmatter.metadata;
+  if (metadata !== undefined &&
+      (typeof metadata !== 'object' || metadata === null || Array.isArray(metadata) ||
+       Object.values(metadata).some((v) => typeof v !== 'string' || v.length === 0))) {
+    push('error', 'metadata-format', 'metadata must be a map of non-empty string values', 'SKILL.md');
+  }
   for (const f of skill.files) {
     if (f.includes('\0')) push('error', 'filename-sane', `filename contains NUL: ${f}`);
   }

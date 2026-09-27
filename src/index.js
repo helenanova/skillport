@@ -32,7 +32,7 @@ export async function checkSkill(skillDir, options = {}) {
     }
     const issues = skill.hasSkillMd ? harness.staticChecks(skill) : [];
     const result = { label: harness.label, issues, steps: [], ok: true, smokeTested: false };
-    if (runSmoke && harness.smoke) {
+    if (runSmoke && harness.smoke && skill.escapingSymlinks.length === 0) {
       result.smokeTested = true;
       result.steps = await smokeTest(skill, harness);
     }
