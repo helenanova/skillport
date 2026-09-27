@@ -1,0 +1,31 @@
+{
+  "name": "skillport",
+  "version": "0.1.0",
+  "description": "Portability test for agent skills: load and run one skill across multiple agent harnesses and see exactly where it breaks.",
+  "type": "module",
+  "bin": {
+    "skillport": "bin/skillport.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "test": "node --test test/*.test.js",
+    "check:fixtures": "node scripts/verify-fixtures.js",
+    "demo": "node scripts/demo.js"
+  },
+  "keywords": [
+    "agent-skills",
+    "portability",
+    "claude-code",
+    "codex",
+    "cursor",
+    "testing"
+  ],
+  "author": "helenanova",
+  "license": "MIT",
+  "devDependencies": {
+    "eslint": "^9.13.0"
+  }
+}

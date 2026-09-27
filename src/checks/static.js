@@ -1,0 +1,86 @@
+import path from 'node:path';
+import { extractReferences } from '../skill.js';
+
+// Harness-agnostic format checks. Each rule returns zero or more issues:
+// { level: 'error'|'warning', rule, message, file? }
+
+const NAME_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+const MAX_NAME = 64;
+const MAX_DESCRIPTION = 1024;
+
+export function runStaticChecks(skill) {
+  const issues = [];
+  const push = (level, rule, message, file) => issues.push({ level, rule, message, file });
+
+  if (!skill.hasSkillMd) {
+    push('error', 'skill-md-exists', 'SKILL.md is missing at the skill root');
+    return issues; // everything else depends on the manifest
+  }
+
+  for (const err of skill.frontmatterErrors) {
+    push('error', 'frontmatter-parse', `frontmatter: ${err}`, 'SKILL.md');
+  }
+
+  const { name, description } = skill.frontmatter;
+
+  if (!name) {
+    push('error', 'frontmatter-name', 'frontmatter is missing required key `name`', 'SKILL.md');
+  } else {
+    if (typeof name !== 'string' || !NAME_RE.test(name)) {
+      push('error', 'name-format', `name "${name}" must be lowercase letters, digits and hyphens (e.g. pdf-tools)`, 'SKILL.md');
+    }
+    if (name.length > MAX_NAME) {
+      push('error', 'name-length', `name is ${name.length} chars; harnesses cap it at ${MAX_NAME}`, 'SKILL.md');
+    }
+    if (name !== skill.dirName) {
+      push('warning', 'name-dir-mismatch', `name "${name}" does not match the directory "${skill.dirName}"; some harnesses key skills by directory`, 'SKILL.md');
+    }
+  }
+
+  if (!description) {
+    push('error', 'frontmatter-description', 'frontmatter is missing required key `description`', 'SKILL.md');
+  } else if (typeof description === 'string') {
+    if (description.length > MAX_DESCRIPTION) {
+      push('error', 'description-length', `description is ${description.length} chars; over the ${MAX_DESCRIPTION} char limit`, 'SKILL.md');
+    }
+    if (description.length < 20) {
+      push('warning', 'description-thin', 'description is very short; harnesses use it to decide when to load the skill', 'SKILL.md');
+    }
+  }
+
+  if (!skill.body || skill.body.trim().length === 0) {
+    push('warning', 'body-empty', 'SKILL.md has no body below the frontmatter', 'SKILL.md');
+  }
+
+  // Referenced local files must exist.
+  const refs = extractReferences(skill);
+  const fileSet = new Set(skill.files);
+  for (const ref of refs) {
+    if (path.isAbsolute(ref) || /^[A-Za-z]:[\\/]/.test(ref)) {
+      push('error', 'no-absolute-paths', `absolute path reference "${ref}" will not resolve on another machine`, 'SKILL.md');
+      continue;
+    }
+    if (ref.startsWith('..')) {
+      push('error', 'no-parent-escape', `reference "${ref}" escapes the skill directory`, 'SKILL.md');
+      continue;
+    }
+    if (!fileSet.has(ref)) {
+      push('error', 'ref-exists', `referenced file "${ref}" does not exist in the skill`, 'SKILL.md');
+    }
+  }
+
+  // Absolute paths anywhere in the manifest body (machine-specific).
+  const absBody = skill.raw.match(/(?<![\w/.-])\/(?:Users|home|opt|var|tmp)\/[\w./-]+/g);
+  if (absBody) {
+    for (const p of absBody) {
+      push('error', 'no-absolute-paths', `absolute path "${p}" is machine-specific`, 'SKILL.md');
+    }
+  }
+
+  // Symlinks escaping the skill root break every harness installer.
+  for (const f of skill.files) {
+    if (f.includes('\0')) push('error', 'filename-sane', `filename contains NUL: ${f}`);
+  }
+
+  return issues;
+}

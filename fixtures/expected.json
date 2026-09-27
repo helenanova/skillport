@@ -1,0 +1,12 @@
+{
+  "valid-minimal": { "ok": true },
+  "valid-full": { "ok": true },
+  "missing-skill-md": { "ok": false, "rules": ["skill-md-exists"] },
+  "broken-reference-path": { "ok": false, "rules": ["ref-exists"] },
+  "missing-frontmatter": { "ok": false, "rules": ["frontmatter-name", "frontmatter-description"] },
+  "invalid-name": { "ok": false, "rules": ["name-format"] },
+  "absolute-path": { "ok": false, "rules": ["no-absolute-paths"] },
+  "script-syntax-error": { "ok": false, "steps": ["script scripts/rename.js"] },
+  "oversized-description": { "ok": false, "rules": ["description-length"] },
+  "missing-script-entry": { "ok": false, "rules": ["ref-exists"] }
+}
