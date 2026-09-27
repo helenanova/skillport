@@ -16,6 +16,12 @@ test('parses block lists', () => {
   assert.deepEqual(data['allowed-tools'], ['Bash', 'Read']);
 });
 
+test('parses spec-valid metadata mapping', () => {
+  const { data, errors } = parseFrontmatter('---\nname: pdf-processing\ndescription: Extract PDF text.\nmetadata:\n  author: example-org\n  version: "1.0"\n---\n# PDF Processing\n');
+  assert.deepEqual(errors, []);
+  assert.deepEqual(data.metadata, { author: 'example-org', version: '1.0' });
+});
+
 test('reports missing frontmatter', () => {
   const { errors } = parseFrontmatter('# nope\n');
   assert.equal(errors.length, 1);

@@ -69,10 +69,10 @@ npx skillport check my-skill --markdown   # GitHub-Flavored Markdown
 npx skillport check my-skill --out report.md
 ```
 
-The repo's own CI publishes the Markdown report for all ten bundled fixtures
+The repo's own CI publishes the Markdown report for all eleven bundled fixtures
 to the GitHub Actions job summary on every push.
 
-## The ten fixtures
+## The eleven fixtures
 
 `fixtures/` ships the failures we kept hitting by hand, so the tool is tested
 against real breakage: missing `SKILL.md`, broken reference paths, missing

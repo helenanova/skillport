@@ -1,6 +1,5 @@
 // Minimal YAML-frontmatter parser for SKILL.md files.
-// Supports the subset agent-skill manifests actually use:
-// scalar keys (`name: foo`), and block lists (`key:\n  - a\n  - b`).
+// Supports scalar keys, block lists, and one-level metadata mappings.
 // Not a general YAML parser - documented MVP trade-off in README.
 
 export function parseFrontmatter(markdown) {
@@ -24,6 +23,18 @@ export function parseFrontmatter(markdown) {
     if (listItem && currentKey) {
       if (!Array.isArray(result.data[currentKey])) result.data[currentKey] = [];
       result.data[currentKey].push(listItem[1].trim().replace(/^["']|["']$/g, ''));
+      continue;
+    }
+    const mapItem = line.match(/^  ([A-Za-z0-9_-]+):\s*(.*)$/);
+    if (mapItem && currentKey === 'metadata') {
+      if (Array.isArray(result.data.metadata) && result.data.metadata.length === 0) {
+        result.data.metadata = {};
+      }
+      if (typeof result.data.metadata !== 'object' || Array.isArray(result.data.metadata)) {
+        result.errors.push(`unparseable frontmatter line: ${line.trim()}`);
+        continue;
+      }
+      result.data.metadata[mapItem[1]] = mapItem[2].trim().replace(/^["']|["']$/g, '');
       continue;
     }
     const kv = line.match(/^([A-Za-z0-9_-]+):\s*(.*)$/);

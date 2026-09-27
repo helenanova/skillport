@@ -1,6 +1,7 @@
 {
   "valid-minimal": { "ok": true },
   "valid-full": { "ok": true },
+  "spec-metadata": { "ok": true },
   "missing-skill-md": { "ok": false, "rules": ["skill-md-exists"] },
   "broken-reference-path": { "ok": false, "rules": ["ref-exists"] },
   "missing-frontmatter": { "ok": false, "rules": ["frontmatter-name", "frontmatter-description"] },

@@ -22,6 +22,13 @@ test('valid-full passes and smoke-tests scripts on two harnesses', async () => {
   assert.equal(r.harnesses['cursor'].smokeTested, false);
 });
 
+test('official-example metadata mapping passes on all three checks', async () => {
+  const r = await checkSkill(fx('spec-metadata'));
+  assert.equal(r.ok, true);
+  assert.deepEqual(r.static.issues, []);
+  for (const h of Object.values(r.harnesses)) assert.equal(h.ok, true);
+});
+
 test('missing SKILL.md is fatal for every harness', async () => {
   const r = await checkSkill(fx('missing-skill-md'));
   assert.equal(r.ok, false);
