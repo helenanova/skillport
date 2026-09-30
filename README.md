@@ -32,8 +32,24 @@ Exit code is `0` when all selected SkillPort checks pass, `1` on a detected
 error - so it drops straight into CI:
 
 ```yaml
-- run: npx skillport check my-skill/
+# .github/workflows/skillport.yml in a repository containing skills/my-skill/
+name: Skill portability
+on: [push, pull_request]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: git clone --depth 1 https://github.com/helenanova/skillport.git "$RUNNER_TEMP/skillport"
+      - run: npm ci --prefix "$RUNNER_TEMP/skillport"
+      - run: node "$RUNNER_TEMP/skillport/bin/skillport.js" check ./skills/my-skill
 ```
+
+Replace `./skills/my-skill` with the path to your skill. This checks the current
+SkillPort main branch, so pin a commit or tag for reproducible CI after reviewing it.
 
 ## What it checks
 
