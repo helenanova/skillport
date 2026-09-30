@@ -8,7 +8,7 @@ const NAME_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const MAX_NAME = 64;
 const MAX_DESCRIPTION = 1024;
 
-export function runStaticChecks(skill) {
+export function runStaticChecks(skill, { outputPaths = [] } = {}) {
   const issues = [];
   const push = (level, rule, message, file) => issues.push({ level, rule, message, file });
 
@@ -69,12 +69,36 @@ export function runStaticChecks(skill) {
     }
   }
 
+  // Explicit exact-path output declarations, never inferred from nearby verbs.
+  const validOutputs = new Set();
+  if (!Array.isArray(outputPaths)) {
+    push('error', 'output-path-config', 'outputPaths must be an array of exact /tmp/ file paths');
+  } else {
+    for (const output of outputPaths) {
+      if (typeof output !== 'string' || !/^\/tmp\/[\w./-]+$/.test(output) ||
+          output.endsWith('/') || path.posix.normalize(output) !== output ||
+          output.split('/').includes('..')) {
+        push('error', 'output-path-config', 'output paths must be exact normalized /tmp/ file paths, without globs or parent escapes');
+      } else validOutputs.add(output);
+    }
+  }
+  const usedOutputs = new Set();
+
   // Absolute paths anywhere in the manifest body (machine-specific).
   const absBody = skill.raw.match(/(?<![\w/.-])\/(?:Users|home|opt|var|tmp)\/[\w./-]+/g);
   if (absBody) {
     for (const p of absBody) {
-      push('error', 'no-absolute-paths', `absolute path "${p}" is machine-specific`, 'SKILL.md');
+      if (validOutputs.has(p)) {
+        usedOutputs.add(p);
+        push('warning', 'declared-output-path', `"${p}" is explicitly declared as generated output; input use is not verified`, 'SKILL.md');
+      } else {
+        push('error', 'no-absolute-paths', `absolute path "${p}" is machine-specific`, 'SKILL.md');
+      }
     }
+  }
+
+  for (const output of validOutputs) {
+    if (!usedOutputs.has(output)) push('error', 'output-path-config', `declared output "${output}" does not occur in SKILL.md`);
   }
 
   // Symlinks escaping the skill root break installers and can expose local files.

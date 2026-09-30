@@ -132,3 +132,49 @@ test('non-directory path returns a fatal result', async () => {
   assert.equal(r.ok, false);
   assert.match(r.fatal, /not a directory/);
 });
+
+// Characterize current behavior without silently weakening input-path checks.
+for (const name of ['generated-output-path', 'absolute-input-path', 'mixed-input-output-path']) {
+  test(`current absolute-path detector rejects ${name}`, async () => {
+    const r = await checkSkill(fx(name));
+    assert.equal(r.ok, false);
+    assert.ok(r.static.issues.some((i) => i.rule === 'no-absolute-paths'));
+  });
+}
+test('current reference detector flags a fenced template link', async () => {
+  const r = await checkSkill(fx('example-template-link'));
+  assert.equal(r.ok, false);
+  assert.ok(r.static.issues.some((i) => i.rule === 'ref-exists'));
+});
+test('explicit generated output exemption warns and leaves strict default unchanged', async () => {
+  const r = await checkSkill(fx('generated-output-path'), { outputPaths: ['/tmp/skillport-report.html'] });
+  assert.equal(r.ok, true);
+  assert.ok(r.static.issues.some((i) => i.rule === 'declared-output-path'));
+});
+test('output exemption does not hide mixed input dependency', async () => {
+  const r = await checkSkill(fx('mixed-input-output-path'), { outputPaths: ['/tmp/skillport-report.html'] });
+  assert.equal(r.ok, false);
+  assert.ok(r.static.issues.some((i) => i.rule === 'no-absolute-paths' && i.message.includes('/home/alex/private.csv')));
+});
+for (const output of ['/tmp/', '/tmp/*', '/tmp/../home/private.csv', '/tmp/not-used.json', '/home/alex/private.csv']) {
+  test(`unsafe or unused output declaration rejected: ${output}`, async () => {
+    const r = await checkSkill(fx('generated-output-path'), { outputPaths: [output] });
+    assert.equal(r.ok, false);
+    assert.ok(r.static.issues.some((i) => i.rule === 'output-path-config'));
+  });
+}
+test.todo('template links inside example code fences should not count as bundled dependencies');
+test('declared output never exempts a Markdown-linked absolute dependency', async () => {
+  const { runStaticChecks } = await import('../src/checks/static.js');
+  const issues = runStaticChecks({ hasSkillMd: true, frontmatterErrors: [],
+    frontmatter: { name: 'linked-output', description: 'Check linked absolute dependencies safely.' },
+    dirName: 'linked-output', body: '[Input](/tmp/data.json)',
+    raw: '[Input](/tmp/data.json)', files: [], escapingSymlinks: [] },
+  { outputPaths: ['/tmp/data.json'] });
+  assert.ok(issues.some((i) => i.rule === 'no-absolute-paths'));
+});
+test('output config cannot hide a parent escape or escaping symlink', async () => {
+  const r = await checkSkill(fx('symlink-escape'), { outputPaths: ['/tmp/unused.html'] });
+  assert.equal(r.ok, false);
+  assert.ok(r.static.issues.some((i) => i.rule === 'symlink-escape'));
+});

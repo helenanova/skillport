@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import path from 'node:path';
+import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
@@ -42,9 +43,19 @@ test('--markdown emits a harness table', async () => {
 test('fixtures command runs the whole set', async () => {
   const { stdout } = await run('node', [bin, 'fixtures', '--json']);
   const reports = JSON.parse(stdout);
-  assert.equal(reports.length, 16);
+  const expected = JSON.parse(await readFile(path.join(root, 'fixtures', 'expected.json'), 'utf8'));
+  assert.equal(reports.length, Object.keys(expected).length);
 });
 
 test('check without a path exits 2', async () => {
   await assert.rejects(run('node', [bin, 'check']), (err) => err.code === 2);
+});
+test('exact output option emits a warning and succeeds for generated output', async () => {
+  const { stdout } = await run('node', [bin, 'check', fx('generated-output-path'), '--no-smoke', '--output-path', '/tmp/skillport-report.html', '--json']);
+  const r = JSON.parse(stdout);
+  assert.equal(r.ok, true);
+  assert.ok(r.static.issues.some((i) => i.rule === 'declared-output-path'));
+});
+test('missing output option argument exits 2', async () => {
+  await assert.rejects(run('node', [bin, 'check', fx('generated-output-path'), '--output-path']), (err) => err.code === 2);
 });

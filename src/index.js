@@ -22,7 +22,7 @@ export async function checkSkill(skillDir, options = {}) {
     };
   }
 
-  const staticIssues = runStaticChecks(skill);
+  const staticIssues = runStaticChecks(skill, { outputPaths: options.outputPaths || [] });
   const harnesses = {};
 
   for (const id of harnessIds) {

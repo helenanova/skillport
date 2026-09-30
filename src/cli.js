@@ -14,6 +14,7 @@ Usage:
 
 Options for "check":
   --harness <a,b,c>   Harnesses to test (default: ${DEFAULT_HARNESSES.join(',')})
+  --output-path <path> Declare an exact generated /tmp/ output path (repeatable; warns)
   --no-smoke          Skip smoke tests (static checks only)
   --json              Machine-readable report to stdout
   --markdown          GitHub-Flavored Markdown report to stdout
@@ -69,9 +70,19 @@ export async function main(argv) {
     const harnesses = hIdx !== -1 ? args[hIdx + 1].split(',').map((s) => s.trim()) : undefined;
     const smoke = !args.includes('--no-smoke');
 
+    const outputPaths = [];
+    for (let i = 0; i < args.length; i++) {
+      if (args[i] === '--output-path') {
+        if (!args[i + 1] || args[i + 1].startsWith('--')) {
+          process.stderr.write('error: --output-path needs an exact /tmp/ file path\n');
+          return 2;
+        }
+        outputPaths.push(args[++i]);
+      }
+    }
     let result;
     try {
-      result = await checkSkill(target, { harnesses, smoke });
+      result = await checkSkill(target, { harnesses, smoke, outputPaths });
     } catch (err) {
       process.stderr.write(`error: ${err.message}\n`);
       return 2;

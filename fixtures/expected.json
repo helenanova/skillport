@@ -1,18 +1,108 @@
 {
-  "valid-minimal": { "ok": true },
-  "valid-full": { "ok": true },
-  "spec-metadata": { "ok": true },
-  "reference-punctuation": { "ok": true },
-  "script-data": { "ok": true },
-  "symlink-escape": { "ok": false, "rules": ["symlink-escape"] },
-  "compatibility-oversized": { "ok": false, "rules": ["compatibility-format"] },
-  "metadata-empty-value": { "ok": false, "rules": ["metadata-format"] },
-  "missing-skill-md": { "ok": false, "rules": ["skill-md-exists"] },
-  "broken-reference-path": { "ok": false, "rules": ["ref-exists"] },
-  "missing-frontmatter": { "ok": false, "rules": ["frontmatter-name", "frontmatter-description"] },
-  "invalid-name": { "ok": false, "rules": ["name-format"] },
-  "absolute-path": { "ok": false, "rules": ["no-absolute-paths"] },
-  "script-syntax-error": { "ok": false, "steps": ["script scripts/rename.js"] },
-  "oversized-description": { "ok": false, "rules": ["description-length"] },
-  "missing-script-entry": { "ok": false, "rules": ["ref-exists"] }
+  "valid-minimal": {
+    "ok": true
+  },
+  "valid-full": {
+    "ok": true
+  },
+  "spec-metadata": {
+    "ok": true
+  },
+  "reference-punctuation": {
+    "ok": true
+  },
+  "script-data": {
+    "ok": true
+  },
+  "symlink-escape": {
+    "ok": false,
+    "rules": [
+      "symlink-escape"
+    ]
+  },
+  "compatibility-oversized": {
+    "ok": false,
+    "rules": [
+      "compatibility-format"
+    ]
+  },
+  "metadata-empty-value": {
+    "ok": false,
+    "rules": [
+      "metadata-format"
+    ]
+  },
+  "missing-skill-md": {
+    "ok": false,
+    "rules": [
+      "skill-md-exists"
+    ]
+  },
+  "broken-reference-path": {
+    "ok": false,
+    "rules": [
+      "ref-exists"
+    ]
+  },
+  "missing-frontmatter": {
+    "ok": false,
+    "rules": [
+      "frontmatter-name",
+      "frontmatter-description"
+    ]
+  },
+  "invalid-name": {
+    "ok": false,
+    "rules": [
+      "name-format"
+    ]
+  },
+  "absolute-path": {
+    "ok": false,
+    "rules": [
+      "no-absolute-paths"
+    ]
+  },
+  "script-syntax-error": {
+    "ok": false,
+    "steps": [
+      "script scripts/rename.js"
+    ]
+  },
+  "oversized-description": {
+    "ok": false,
+    "rules": [
+      "description-length"
+    ]
+  },
+  "missing-script-entry": {
+    "ok": false,
+    "rules": [
+      "ref-exists"
+    ]
+  },
+  "generated-output-path": {
+    "ok": false,
+    "rules": [
+      "no-absolute-paths"
+    ]
+  },
+  "absolute-input-path": {
+    "ok": false,
+    "rules": [
+      "no-absolute-paths"
+    ]
+  },
+  "mixed-input-output-path": {
+    "ok": false,
+    "rules": [
+      "no-absolute-paths"
+    ]
+  },
+  "example-template-link": {
+    "ok": false,
+    "rules": [
+      "ref-exists"
+    ]
+  }
 }
