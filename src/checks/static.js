@@ -85,10 +85,12 @@ export function runStaticChecks(skill, { outputPaths = [] } = {}) {
   const usedOutputs = new Set();
 
   // Absolute paths anywhere in the manifest body (machine-specific).
-  const absBody = skill.raw.match(/(?<![\w/.-])\/(?:Users|home|opt|var|tmp)\/[\w./-]+/g);
+  const absBody = skill.raw.match(/(?<![\w/.-])\/(?:Users|home|opt|var|tmp)\/(?:[\w./-]|<[\w-]+>)+/g);
   if (absBody) {
     for (const p of absBody) {
-      if (validOutputs.has(p)) {
+      if (/<[\w-]+>/.test(p)) {
+        push('error', 'no-absolute-paths', `absolute path template "${p}" is not an exact generated-output file; resolve the placeholder before declaring an output`, 'SKILL.md');
+      } else if (validOutputs.has(p)) {
         usedOutputs.add(p);
         push('warning', 'declared-output-path', `"${p}" is explicitly declared as generated output; input use is not verified`, 'SKILL.md');
       } else {

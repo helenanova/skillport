@@ -111,6 +111,9 @@ as an output can hide a real dependency. Only exact normalized `/tmp/` file
 paths are accepted, not directories or globs; unused declarations fail.
 Markdown-linked absolute dependencies, parent escapes and escaping symlinks
 still fail. Examples inside code fences can still be mistaken for dependencies.
+Absolute templates such as `/tmp/eval_review_<skill-name>.html` remain errors.
+The diagnostic shows the template, not a partial filename. Resolve a placeholder
+to an exact output file before declaring it; a partial prefix cannot exempt it.
 
 ## What SkillPort is not
 
