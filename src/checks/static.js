@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { extractReferences } from '../skill.js';
+import { extractReferences, markedMarkdownExamples } from '../skill.js';
 
 // Harness-agnostic format checks. Each rule returns zero or more issues:
 // { level: 'error'|'warning', rule, message, file? }
@@ -53,6 +53,8 @@ export function runStaticChecks(skill, { outputPaths = [] } = {}) {
   }
 
   // Referenced local files must exist.
+  const examples = markedMarkdownExamples(skill.raw).count;
+  if (examples) push('warning', 'marked-example', `${examples} author-marked Markdown example block(s) excluded from bundled-file lookup; dependencies inside are not verified`, 'SKILL.md');
   const refs = extractReferences(skill);
   const fileSet = new Set(skill.files);
   for (const ref of refs) {

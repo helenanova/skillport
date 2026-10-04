@@ -163,7 +163,11 @@ for (const output of ['/tmp/', '/tmp/*', '/tmp/../home/private.csv', '/tmp/not-u
     assert.ok(r.static.issues.some((i) => i.rule === 'output-path-config'));
   });
 }
-test.todo('template links inside example code fences should not count as bundled dependencies');
+test('explicitly marked Markdown template passes with a warning', async () => {
+  const r = await checkSkill(fx('marked-template-link'));
+  assert.equal(r.ok, true);
+  assert.ok(r.static.issues.some((i) => i.rule === 'marked-example'));
+});
 test('declared output never exempts a Markdown-linked absolute dependency', async () => {
   const { runStaticChecks } = await import('../src/checks/static.js');
   const issues = runStaticChecks({ hasSkillMd: true, frontmatterErrors: [],

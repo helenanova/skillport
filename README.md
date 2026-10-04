@@ -84,10 +84,10 @@ npx skillport check my-skill --markdown   # GitHub-Flavored Markdown
 npx skillport check my-skill --out report.md
 ```
 
-The repo's own CI publishes the Markdown report for all twenty bundled fixtures
+The repo's own CI publishes the Markdown report for all twenty-one bundled fixtures
 to the GitHub Actions job summary on every push.
 
-## The twenty fixtures
+## The twenty-one fixtures
 
 `fixtures/` ships the failures we kept hitting by hand, so the tool is tested
 against real breakage: missing `SKILL.md`, broken reference paths, missing
@@ -114,6 +114,25 @@ still fail. Examples inside code fences can still be mistaken for dependencies.
 Absolute templates such as `/tmp/eval_review_<skill-name>.html` remain errors.
 The diagnostic shows the template, not a partial filename. Resolve a placeholder
 to an exact output file before declaring it; a partial prefix cannot exempt it.
+
+## Marked Markdown examples
+
+By default, file references inside code fences are checked too. To mark one
+Markdown block as a template rather than bundled dependencies, put this exact
+comment immediately before its opening fence, without a blank line:
+
+````markdown
+<!-- skillport:example -->
+```md
+[Details](REFERENCE.md)
+```
+````
+
+Only balanced `md` or `markdown` blocks are eligible, using backticks or tildes.
+The marker applies to that one block and emits a `marked-example` warning.
+Relative file references inside it are not verified. Marking a real dependency
+as an example can hide a missing file. Unmarked, unclosed, shell and other blocks
+remain checked. Absolute paths, parent escapes and escaping symlinks still fail.
 
 ## What SkillPort is not
 

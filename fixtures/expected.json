@@ -104,5 +104,11 @@
     "rules": [
       "ref-exists"
     ]
+  },
+  "marked-template-link": {
+    "ok": true,
+    "rules": [
+      "marked-example"
+    ]
   }
 }
