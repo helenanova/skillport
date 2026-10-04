@@ -53,7 +53,11 @@ export function runStaticChecks(skill, { outputPaths = [] } = {}) {
   }
 
   // Referenced local files must exist.
-  const examples = markedMarkdownExamples(skill.raw).count;
+  const marked = markedMarkdownExamples(skill.raw);
+  const examples = marked.count;
+  for (const line of marked.ignoredMarkerLines) {
+    push('warning', 'example-marker-unused', `example marker at line ${line} did not exclude a balanced immediately-following md/markdown block; references remain checked`, 'SKILL.md');
+  }
   if (examples) push('warning', 'marked-example', `${examples} author-marked Markdown example block(s) excluded from bundled-file lookup; dependencies inside are not verified`, 'SKILL.md');
   const refs = extractReferences(skill);
   const fileSet = new Set(skill.files);

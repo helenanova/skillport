@@ -89,8 +89,11 @@ export function markedMarkdownExamples(raw) {
   const lines = raw.split('\n');
   let fence = null;
   let count = 0;
+  const markerLines = [];
+  const appliedMarkers = new Set();
   for (let i = 0; i < lines.length; i++) {
     if (!fence) {
+      if (lines[i].trim() === '<!-- skillport:example -->') markerLines.push(i);
       const m = /^( {0,3})(`{3,}|~{3,})([^\n]*)$/.exec(lines[i]);
       if (!m || (m[2][0] === '`' && m[3].includes('`'))) continue;
       fence = { start: i, char: m[2][0], length: m[2].length,
@@ -102,9 +105,10 @@ export function markedMarkdownExamples(raw) {
       if (fence.example) {
         for (let j = fence.start; j <= i; j++) lines[j] = '';
         count++;
+        appliedMarkers.add(fence.start - 1);
       }
       fence = null;
     }
   }
-  return { source: lines.join('\n'), count };
+  return { source: lines.join('\n'), count, ignoredMarkerLines: markerLines.filter((i) => !appliedMarkers.has(i)).map((i) => i + 1) };
 }

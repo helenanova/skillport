@@ -133,6 +133,9 @@ The marker applies to that one block and emits a `marked-example` warning.
 Relative file references inside it are not verified. Marking a real dependency
 as an example can hide a missing file. Unmarked, unclosed, shell and other blocks
 remain checked. Absolute paths, parent escapes and escaping symlinks still fail.
+An exact marker outside a code fence that does not attach to an eligible block
+emits `example-marker-unused` with its line number; it does not change the verdict.
+Marker text inside a fenced example is treated as example content, not a directive.
 
 ## What SkillPort is not
 
