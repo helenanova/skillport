@@ -110,5 +110,18 @@
     "rules": [
       "marked-example"
     ]
+  },
+  "orphan-example-marker": {
+    "ok": true,
+    "rules": [
+      "example-marker-unused"
+    ]
+  },
+  "marked-example-prose-reference": {
+    "ok": false,
+    "rules": [
+      "marked-example",
+      "ref-exists"
+    ]
   }
 }

@@ -84,10 +84,10 @@ npx skillport check my-skill --markdown   # GitHub-Flavored Markdown
 npx skillport check my-skill --out report.md
 ```
 
-The repo's own CI publishes the Markdown report for all twenty-one bundled fixtures
+The repo's own CI publishes the Markdown report for all twenty-three bundled fixtures
 to the GitHub Actions job summary on every push.
 
-## The twenty-one fixtures
+## The twenty-three fixtures
 
 `fixtures/` ships the failures we kept hitting by hand, so the tool is tested
 against real breakage: missing `SKILL.md`, broken reference paths, missing
@@ -136,6 +136,9 @@ remain checked. Absolute paths, parent escapes and escaping symlinks still fail.
 An exact marker outside a code fence that does not attach to an eligible block
 emits `example-marker-unused` with its line number; it does not change the verdict.
 Marker text inside a fenced example is treated as example content, not a directive.
+References in prose remain checked, including text describing an example; there
+is no prose-region marker. Move template links into an explicitly marked
+Markdown block if they should not be checked as bundled dependencies.
 
 ## What SkillPort is not
 
