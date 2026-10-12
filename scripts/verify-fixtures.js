@@ -5,6 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { checkSkill } from '../src/index.js';
 import { formatMarkdown } from '../src/report.js';
+import { withFixture } from '../src/fixtures.js';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 const fixturesDir = path.join(root, 'fixtures');
@@ -14,7 +15,12 @@ let failures = 0;
 const reports = [];
 
 for (const [name, want] of Object.entries(expected)) {
-  const result = await checkSkill(path.join(fixturesDir, name));
+  const result = await withFixture(fixturesDir, name, async (dir) => {
+        const report = await checkSkill(dir);
+        // The temporary reconstruction is removed before the report is shown.
+        report.skillDir = fileURLToPath(new URL(`../fixtures/${name}`, import.meta.url));
+        return report;
+      });
   reports.push(result);
   const gotRules = result.static.issues.map((i) => i.rule);
   const gotSteps = Object.values(result.harnesses).flatMap((h) =>
