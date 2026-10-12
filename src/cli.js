@@ -1,8 +1,8 @@
 import { fileURLToPath } from 'node:url';
-import path from 'node:path';
 import { promises as fs } from 'node:fs';
 import { checkSkill, DEFAULT_HARNESSES } from './index.js';
 import { formatText, formatMarkdown } from './report.js';
+import { withFixture } from './fixtures.js';
 
 const HELP = `SkillPort - portability test for agent skills
 
@@ -48,7 +48,12 @@ export async function main(argv) {
       .filter((e) => e.isDirectory()).map((e) => e.name).sort();
     const results = [];
     for (const name of entries) {
-      results.push(await checkSkill(path.join(fixturesDir, name)));
+      results.push(await withFixture(fixturesDir, name, async (dir) => {
+        const report = await checkSkill(dir);
+        // The temporary reconstruction is removed before the report is shown.
+        report.skillDir = fileURLToPath(new URL(`../fixtures/${name}`, import.meta.url));
+        return report;
+      }));
     }
     if (json) {
       process.stdout.write(JSON.stringify(results, null, 2) + '\n');
