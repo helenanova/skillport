@@ -35,18 +35,27 @@ error - so it drops straight into CI:
 # .github/workflows/skillport.yml in a repository containing skills/my-skill/
 name: Skill portability
 on: [push, pull_request]
+permissions:
+  contents: read
 jobs:
   check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 22
       - run: git clone --depth 1 https://github.com/helenanova/skillport.git "$RUNNER_TEMP/skillport"
       - run: npm ci --prefix "$RUNNER_TEMP/skillport"
       - run: node "$RUNNER_TEMP/skillport/bin/skillport.js" check ./skills/my-skill
 ```
+
+This example pins the runner OS label and reviewed v7 action commits, grants
+read-only repository access, and does not persist checkout credentials. The
+actions use Node.js 24 internally; `node-version: 22` selects the runtime for
+SkillPort itself. An OS label still receives image updates.
 
 Replace `./skills/my-skill` with the path to your skill. This checks the current
 SkillPort main branch, so pin a commit or tag for reproducible CI after reviewing it.
