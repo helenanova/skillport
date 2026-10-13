@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { checkSkill } from '../src/index.js';
+import { withFixture } from '../src/fixtures.js';
 
 const fixtures = path.join(fileURLToPath(new URL('..', import.meta.url)), 'fixtures');
 const fx = (name) => path.join(fixtures, name);
@@ -43,7 +44,7 @@ test('non-code scripts asset is not treated as an executable', async () => {
 });
 
 test('escaping symlink fails before copying or syntax checking', async () => {
-  const r = await checkSkill(fx('symlink-escape'));
+  const r = await withFixture(fixtures, 'symlink-escape', checkSkill);
   assert.equal(r.ok, false);
   assert.ok(r.static.issues.some((i) => i.rule === 'symlink-escape'));
   assert.equal(r.harnesses['claude-code'].smokeTested, false);
@@ -178,7 +179,8 @@ test('declared output never exempts a Markdown-linked absolute dependency', asyn
   assert.ok(issues.some((i) => i.rule === 'no-absolute-paths'));
 });
 test('output config cannot hide a parent escape or escaping symlink', async () => {
-  const r = await checkSkill(fx('symlink-escape'), { outputPaths: ['/tmp/unused.html'] });
+  const r = await withFixture(fixtures, 'symlink-escape', (dir) =>
+    checkSkill(dir, { outputPaths: ['/tmp/unused.html'] }));
   assert.equal(r.ok, false);
   assert.ok(r.static.issues.some((i) => i.rule === 'symlink-escape'));
 });
