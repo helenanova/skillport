@@ -2,7 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import path from 'node:path';
-import { readFile } from 'node:fs/promises';
+import { readFile, mkdtemp, rm } from 'node:fs/promises';
+import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
@@ -100,3 +101,88 @@ for (const [format, option] of [['text', []], ['json', ['--json']], ['markdown',
     );
   });
 }
+
+for (const flag of ['--version', '-v']) {
+  test(`${flag} prints the package version without a command`, async () => {
+    const { stdout, stderr } = await run('node', [bin, flag]);
+    const pkg = JSON.parse(await readFile(path.join(root, 'package.json'), 'utf8'));
+    assert.equal(stdout, `${pkg.version}\n`);
+    assert.equal(stderr, '');
+  });
+}
+
+test('explicit help still takes precedence over version', async () => {
+  const { stdout } = await run('node', [bin, '--version', '--help']);
+  assert.match(stdout, /Usage:/);
+});
+
+test('no arguments remains a usage error', async () => {
+  await assert.rejects(run('node', [bin]), (err) => {
+    assert.equal(err.code, 2);
+    assert.match(err.stdout, /Usage:/);
+    return true;
+  });
+});
+
+for (const flag of ['--harness', '--out']) {
+  for (const suffix of [[], ['--json']]) {
+    test(`${flag} rejects missing value${suffix.length ? ' before another flag' : ''}`, async () => {
+      await assert.rejects(run('node', [bin, 'check', fx('valid-minimal'), flag, ...suffix]), (err) => {
+        assert.equal(err.code, 2);
+        assert.match(err.stderr, new RegExp(`error: ${flag} needs`));
+        assert.doesNotMatch(err.stderr, /unexpected error|TypeError/);
+        assert.equal(err.stdout, '');
+        return true;
+      });
+    });
+  }
+}
+
+for (const [format, option] of [['text', []], ['json', ['--json']], ['markdown', ['--markdown']]]) {
+  for (const [fixture, passes] of [['valid-minimal', true], ['broken-reference-path', false]]) {
+    test(`--out writes stdout unchanged for ${passes ? 'PASS' : 'FAIL'} in ${format}`, async () => {
+      const temp = await mkdtemp(path.join(os.tmpdir(), 'skillport report '));
+      const output = path.join(temp, 'report with spaces.txt');
+      try {
+        const args = [bin, 'check', fx(fixture), '--no-smoke', ...option, '--out', output];
+        let stdout;
+        if (passes) {
+          ({ stdout } = await run('node', args));
+        } else {
+          await assert.rejects(run('node', args), (err) => {
+            assert.equal(err.code, 1);
+            stdout = err.stdout;
+            return true;
+          });
+        }
+        assert.equal(await readFile(output, 'utf8'), stdout);
+        if (format === 'json') {
+          assert.equal(JSON.parse(stdout).ok, passes);
+        } else {
+          assert.match(stdout, passes ? /Result: PASS/ : /Result: FAIL/);
+        }
+      } finally {
+        await rm(temp, { recursive: true, force: true });
+      }
+    });
+  }
+}
+
+test('--harness cursor selects only Cursor and skips smoke', async () => {
+  const { stdout } = await run('node', [bin, 'check', fx('valid-minimal'), '--harness', 'cursor', '--json']);
+  const report = JSON.parse(stdout);
+  assert.equal(report.ok, true);
+  assert.deepEqual(Object.keys(report.harnesses), ['cursor']);
+  assert.equal(report.harnesses.cursor.smokeTested, false);
+});
+
+test('unknown harness is a clear usage error', async () => {
+  await assert.rejects(run('node', [bin, 'check', fx('valid-minimal'), '--harness', 'unknown-harness']), (err) => {
+    assert.equal(err.code, 2);
+    assert.match(err.stderr, /error: unknown harness "unknown-harness"/);
+    assert.match(err.stderr, /Known: claude-code, codex, cursor/);
+    assert.doesNotMatch(err.stderr, /unexpected error|TypeError/);
+    assert.equal(err.stdout, '');
+    return true;
+  });
+});
