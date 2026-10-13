@@ -27,14 +27,19 @@ export async function main(argv) {
   const args = argv.slice(2);
   const cmd = args.find((a) => !a.startsWith('-'));
 
-  if (args.includes('--help') || args.includes('-h') || !cmd) {
+  if (args.includes('--help') || args.includes('-h')) {
     process.stdout.write(HELP);
-    return cmd || args.includes('--help') || args.includes('-h') ? 0 : 2;
+    return 0;
   }
   if (args.includes('--version') || args.includes('-v')) {
     const pkg = JSON.parse(await fs.readFile(new URL('../package.json', import.meta.url), 'utf8'));
     process.stdout.write(`${pkg.version}\n`);
     return 0;
+  }
+
+  if (!cmd) {
+    process.stdout.write(HELP);
+    return 2;
   }
 
   const json = args.includes('--json');
@@ -72,6 +77,14 @@ export async function main(argv) {
       return 2;
     }
     const hIdx = args.indexOf('--harness');
+    if (hIdx !== -1 && (!args[hIdx + 1] || args[hIdx + 1].startsWith('-'))) {
+      process.stderr.write('error: --harness needs a comma-separated harness list\n');
+      return 2;
+    }
+    if (outIdx !== -1 && (!outFile || outFile.startsWith('-'))) {
+      process.stderr.write('error: --out needs a report file path\n');
+      return 2;
+    }
     const harnesses = hIdx !== -1 ? args[hIdx + 1].split(',').map((s) => s.trim()) : undefined;
     const smoke = !args.includes('--no-smoke');
 
