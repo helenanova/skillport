@@ -109,7 +109,12 @@ export async function main(argv) {
     const rendered = json ? JSON.stringify(result, null, 2) : markdown ? formatMarkdown(result) : formatText(result);
     process.stdout.write(rendered + '\n');
     if (outFile) {
-      await fs.writeFile(outFile, rendered + '\n');
+      try {
+        await fs.writeFile(outFile, rendered + '\n');
+      } catch (err) {
+        process.stderr.write(`error: cannot write report to ${JSON.stringify(outFile)}: ${err.code || err.message}\n`);
+        return 2;
+      }
     }
     return result.ok ? 0 : 1;
   }
