@@ -186,3 +186,23 @@ test('unknown harness is a clear usage error', async () => {
     return true;
   });
 });
+
+for (const destination of ['missing-parent', 'directory']) {
+  test(`--out reports ${destination} write failure without an unexpected stack`, async () => {
+    const temp = await mkdtemp(path.join(os.tmpdir(), 'skillport-write-error-'));
+    const output = destination === 'directory' ? temp : path.join(temp, 'missing', 'report.md');
+    try {
+      await assert.rejects(run('node', [bin, 'check', fx('valid-minimal'), '--no-smoke', '--out', output]), (err) => {
+        assert.equal(err.code, 2);
+        assert.match(err.stdout, /Result: PASS/);
+        assert.ok(err.stderr.includes(`error: cannot write report to ${JSON.stringify(output)}:`));
+        assert.match(err.stderr, destination === 'directory' ? /EISDIR/ : /ENOENT/);
+        assert.doesNotMatch(err.stderr, /unexpected error|at async|Error:/);
+        assert.equal(err.stderr.trim().split('\n').length, 1);
+        return true;
+      });
+    } finally {
+      await rm(temp, { recursive: true, force: true });
+    }
+  });
+}
