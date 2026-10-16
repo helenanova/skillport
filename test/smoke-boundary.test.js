@@ -71,3 +71,42 @@ test('syntax failure still removes the staging directory and leaves source uncha
     if (sandbox) await fs.rm(sandbox, { recursive: true, force: true });
   }
 });
+
+test('script discovery only syntax-checks supported lowercase JavaScript, Python and shell files', async () => {
+  const temp = await fs.mkdtemp(path.join(os.tmpdir(), 'skillport-script-matrix-'));
+  const root = path.join(temp, 'script-matrix');
+  try {
+    await fs.mkdir(path.join(root, 'scripts/nested'), { recursive: true });
+    await fs.writeFile(path.join(root, 'SKILL.md'), '---\nname: script-matrix\ndescription: Verify supported script discovery boundaries.\n---\nRun the declared scripts.\n');
+    const supported = [
+      'root.js',
+      'root.mjs',
+      'root.py',
+      'root.sh',
+      'scripts/helper.js',
+      'scripts/module.mjs',
+      'scripts/nested/deep.js',
+      'scripts/run.sh',
+      'scripts/tool.py',
+    ];
+    for (const file of supported) {
+      const body = file.endsWith('.py') ? 'print("syntax only")\n'
+        : file.endsWith('.sh') ? '#!/bin/sh\nexit 0\n'
+        : 'console.log("syntax only");\n';
+      await fs.writeFile(path.join(root, file), body);
+    }
+    for (const file of ['scripts/skip.cjs', 'scripts/UPPER.JS', 'scripts/UPPER.PY', 'scripts/UPPER.SH', 'scripts/data.json']) {
+      await fs.writeFile(path.join(root, file), 'not syntax-checked\n');
+    }
+
+    const steps = await smokeTest(await loadSkill(root), HARNESSES.codex);
+    const scriptSteps = steps.filter((s) => s.name.startsWith('script '));
+    assert.deepEqual(scriptSteps.map((s) => s.name), supported.map((f) => `script ${f}`));
+    for (const step of scriptSteps) assert.equal(step.ok, true, step.detail);
+    for (const skipped of ['scripts/skip.cjs', 'scripts/UPPER.JS', 'scripts/UPPER.PY', 'scripts/UPPER.SH', 'scripts/data.json']) {
+      assert.equal(scriptSteps.some((s) => s.name === `script ${skipped}`), false);
+    }
+  } finally {
+    await fs.rm(temp, { recursive: true, force: true });
+  }
+});
