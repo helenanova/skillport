@@ -22,6 +22,17 @@ test('parses spec-valid metadata mapping', () => {
   assert.deepEqual(data.metadata, { author: 'example-org', version: '1.0' });
 });
 
+
+test('parses CRLF, comments, blank lines and quoted values with exact body', () => {
+  const input = '---\r\nname: "quoted-demo"\r\n\r\n# comment\r\nallowed-tools:\r\n  - "Read"\r\nmetadata:\r\n  source: \'fixture\'\r\n---\r\nBody first\r\n\r\nBody last\r\n';
+  const { data, body, errors } = parseFrontmatter(input);
+  assert.deepEqual(errors, []);
+  assert.equal(data.name, 'quoted-demo');
+  assert.deepEqual(data['allowed-tools'], ['Read']);
+  assert.deepEqual(data.metadata, { source: 'fixture' });
+  assert.equal(body, 'Body first\r\n\r\nBody last\r\n');
+});
+
 test('reports missing frontmatter', () => {
   const { errors } = parseFrontmatter('# nope\n');
   assert.equal(errors.length, 1);
