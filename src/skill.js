@@ -70,15 +70,16 @@ export function extractReferences(skill) {
 
 function collectReferences(source) {
   const refs = new Set();
-  const linkRe = /\[[^\]]*\]\(([^)\s]+)\)/g;
+  const linkRe = /!?\[[^\]\n]*\]\(\s*(?:<((?:\\.|[^<>\n])+)>|((?:\\.|[^\s()])+))(?:\s+["'][^)]*["'])?\s*\)/g;
   let m;
   while ((m = linkRe.exec(source)) !== null) {
-    const target = m[1];
+    const target = (m[1] ?? m[2]).replace(/\\([\s()#])/g, '$1');
     if (/^[a-z]+:\/\//i.test(target) || target.startsWith('#') || target.startsWith('mailto:')) continue;
     refs.add(target.split('#')[0]);
   }
+  const proseSource = source.replace(linkRe, ' ');
   const pathRe = /\b((?:references|scripts|assets|examples)\/[\w./-]+)/g;
-  while ((m = pathRe.exec(source)) !== null) {
+  while ((m = pathRe.exec(proseSource)) !== null) {
     refs.add(m[1].replace(/[.,;:!?]+$/, ''));
   }
   return refs;
