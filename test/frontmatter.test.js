@@ -33,6 +33,34 @@ test('parses CRLF, comments, blank lines and quoted values with exact body', () 
   assert.equal(body, 'Body first\r\n\r\nBody last\r\n');
 });
 
+
+for (const malformed of ['---junk', '----', '--- ']) {
+  test(`rejects malformed opening delimiter: ${JSON.stringify(malformed)}`, () => {
+    const input = `${malformed}\nname: demo\n---\nBody\n`;
+    const { data, body, errors } = parseFrontmatter(input);
+    assert.deepEqual(data, {});
+    assert.equal(body, input);
+    assert.deepEqual(errors, ['no frontmatter block at the top of the file']);
+  });
+}
+
+for (const malformed of ['----', '--- ']) {
+  test(`rejects malformed closing delimiter: ${JSON.stringify(malformed)}`, () => {
+    const input = `---\nname: demo\n${malformed}\nBody\n`;
+    const { data, body, errors } = parseFrontmatter(input);
+    assert.deepEqual(data, {});
+    assert.equal(body, input);
+    assert.deepEqual(errors, ['frontmatter block is not closed with a --- line']);
+  });
+}
+
+test('accepts a closing delimiter at end of file with an empty body', () => {
+  const { data, body, errors } = parseFrontmatter('---\nname: demo\n---');
+  assert.deepEqual(errors, []);
+  assert.deepEqual(data, { name: 'demo' });
+  assert.equal(body, '');
+});
+
 test('reports missing frontmatter', () => {
   const { errors } = parseFrontmatter('# nope\n');
   assert.equal(errors.length, 1);
