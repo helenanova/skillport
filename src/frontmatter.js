@@ -4,17 +4,39 @@
 
 export function parseFrontmatter(markdown) {
   const result = { data: {}, body: markdown, errors: [] };
-  if (!markdown.startsWith('---')) {
+  const firstBreak = markdown.indexOf('\n');
+  const firstLine = (firstBreak === -1 ? markdown : markdown.slice(0, firstBreak)).replace(/\r$/, '');
+  if (firstLine !== '---') {
     result.errors.push('no frontmatter block at the top of the file');
     return result;
   }
-  const end = markdown.indexOf('\n---', 3);
-  if (end === -1) {
+  if (firstBreak === -1) {
     result.errors.push('frontmatter block is not closed with a --- line');
     return result;
   }
-  const raw = markdown.slice(3, end).trim();
-  result.body = markdown.slice(end + 4).replace(/^\r?\n/, '');
+
+  const rawStart = firstBreak + 1;
+  let lineStart = rawStart;
+  let rawEnd = -1;
+  let bodyStart = markdown.length;
+  while (lineStart <= markdown.length) {
+    const nextBreak = markdown.indexOf('\n', lineStart);
+    const lineEnd = nextBreak === -1 ? markdown.length : nextBreak;
+    const line = markdown.slice(lineStart, lineEnd).replace(/\r$/, '');
+    if (line === '---') {
+      rawEnd = lineStart;
+      bodyStart = nextBreak === -1 ? markdown.length : nextBreak + 1;
+      break;
+    }
+    if (nextBreak === -1) break;
+    lineStart = nextBreak + 1;
+  }
+  if (rawEnd === -1) {
+    result.errors.push('frontmatter block is not closed with a --- line');
+    return result;
+  }
+  const raw = markdown.slice(rawStart, rawEnd).trim();
+  result.body = markdown.slice(bodyStart);
   const lines = raw.split(/\r?\n/);
   let currentKey = null;
   for (const line of lines) {
