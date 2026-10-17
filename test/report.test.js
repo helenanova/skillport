@@ -59,3 +59,23 @@ test('text hides successful staging and CLI hints but retains discovery details'
   assert.doesNotMatch(output, /copied to temporary directory|not installed/);
   assert.ok(output.includes('discovery: skill discovered'));
 });
+
+test('Markdown reports escape title, labels, rules and multiline messages without changing text', () => {
+  const title = 'bad`name|line\nnext';
+  const message = 'missing `a|b`\r\nnext line';
+  const report = result({
+    skillName: title,
+    ok: false,
+    static: { issues: [{ level: 'error', rule: 'rule`x', message }] },
+    harnesses: {
+      custom: { label: 'Harness | `X`\r\nY', ok: false, smokeTested: false, issues: [], steps: [] },
+    },
+    summary: { errors: 1, warnings: 0 },
+  });
+  const markdown = formatMarkdown(report);
+  assert.ok(markdown.includes('## SkillPort portability report: `bad\\`name\\|line<br>next`'));
+  assert.ok(markdown.includes('| Harness \\| \\`X\\`<br>Y | static only | ❌ fail |'));
+  assert.ok(markdown.includes('| error | format | `rule\\`x` | missing \\`a\\|b\\`<br>next line |'));
+  assert.equal(markdown.split('\n').filter((line) => line.includes('missing')).length, 1);
+  assert.ok(formatText(report).includes(message));
+});
