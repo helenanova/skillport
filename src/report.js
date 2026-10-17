@@ -1,6 +1,17 @@
 const CHECK = '✓';
 const CROSS = '✗';
 
+function mdCell(value) {
+  return String(value)
+    .replace(/\|/g, '\\|')
+    .replace(/`/g, '\\`')
+    .replace(/\r\n?|\n/g, '<br>');
+}
+
+function mdCode(value) {
+  return `\`${mdCell(value)}\``;
+}
+
 export function formatText(result) {
   const lines = [];
   const title = result.skillName || result.skillDir;
@@ -41,16 +52,16 @@ export function formatText(result) {
 
 export function formatMarkdown(result) {
   const lines = [];
-  lines.push(`## SkillPort portability report: \`${result.skillName || result.skillDir}\``);
+  lines.push(`## SkillPort portability report: ${mdCode(result.skillName || result.skillDir)}`);
   lines.push('');
   if (result.fatal) {
-    lines.push(`**FAIL** - ${result.fatal}`);
+    lines.push(`**FAIL** - ${mdCell(result.fatal)}`);
     return lines.join('\n');
   }
   lines.push('| Harness | Mode | Result |');
   lines.push('| --- | --- | --- |');
   for (const [, h] of Object.entries(result.harnesses)) {
-    lines.push(`| ${h.label} | ${h.smokeTested ? 'static + smoke' : 'static only'} | ${h.ok ? '✅ pass' : '❌ fail'} |`);
+    lines.push(`| ${mdCell(h.label)} | ${h.smokeTested ? 'static + smoke' : 'static only'} | ${h.ok ? '✅ pass' : '❌ fail'} |`);
   }
   lines.push('');
   const issues = [
@@ -66,7 +77,7 @@ export function formatMarkdown(result) {
     lines.push('| Level | Where | Rule | Problem |');
     lines.push('| --- | --- | --- | --- |');
     for (const i of issues) {
-      lines.push(`| ${i.level} | ${i.where} | \`${i.rule}\` | ${i.message.replace(/\|/g, '\\|')} |`);
+      lines.push(`| ${mdCell(i.level)} | ${mdCell(i.where)} | ${mdCode(i.rule)} | ${mdCell(i.message)} |`);
     }
     lines.push('');
   }
