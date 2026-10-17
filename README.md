@@ -93,16 +93,16 @@ npx skillport check my-skill --markdown   # GitHub-Flavored Markdown
 npx skillport check my-skill --out report.md
 ```
 
-The repo's own CI publishes the Markdown report for all twenty-three bundled fixtures
+The repo's own CI publishes the Markdown report for all twenty-five bundled fixtures
 to the GitHub Actions job summary on every push.
 
-## The twenty-three fixtures
+## The twenty-five fixtures
 
 `fixtures/` ships the failures we kept hitting by hand, so the tool is tested
 against real breakage: missing `SKILL.md`, broken reference paths, missing
 frontmatter, invalid names, absolute paths, script syntax errors, oversized
-descriptions, declared-but-missing scripts, escaping symlinks and spec field
-limits - plus known-good skills.
+descriptions, declared-but-missing scripts, Markdown paths with spaces, escaping
+symlinks and spec field limits - plus known-good skills.
 `npm run check:fixtures` asserts every fixture produces its expected verdict.
 
 ## Generated output paths
