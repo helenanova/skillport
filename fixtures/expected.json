@@ -11,6 +11,15 @@
   "reference-punctuation": {
     "ok": true
   },
+  "markdown-space-reference": {
+    "ok": true
+  },
+  "missing-markdown-space-reference": {
+    "ok": false,
+    "rules": [
+      "ref-exists"
+    ]
+  },
   "script-data": {
     "ok": true
   },
