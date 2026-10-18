@@ -20,7 +20,14 @@ export async function loadSkill(skillDir) {
     files: [],
     escapingSymlinks: [],
   };
-  const raw = await fs.readFile(skill.skillMdPath, 'utf8').catch(() => null);
+  let raw = null;
+  try {
+    raw = await fs.readFile(skill.skillMdPath, 'utf8');
+  } catch (err) {
+    if (err?.code !== 'ENOENT' && err?.code !== 'ENOTDIR') {
+      throw new Error(`cannot read SKILL.md: ${err.message}`, { cause: err });
+    }
+  }
   if (raw !== null) {
     skill.hasSkillMd = true;
     skill.raw = raw;
@@ -73,9 +80,19 @@ function collectReferences(source) {
   const linkRe = /!?\[[^\]\n]*\]\(\s*(?:<((?:\\.|[^<>\n])+)>|((?:\\.|[^\s()])+))(?:\s+["'][^)]*["'])?\s*\)/g;
   let m;
   while ((m = linkRe.exec(source)) !== null) {
-    const target = (m[1] ?? m[2]).replace(/\\([\s()#])/g, '$1');
-    if (/^[a-z]+:\/\//i.test(target) || target.startsWith('#') || target.startsWith('mailto:')) continue;
-    refs.add(target.split('#')[0]);
+    let target = (m[1] ?? m[2]).replace(/\\([\s()#])/g, '$1');
+    target = target.split('#')[0];
+    if (!target) continue;
+    try {
+      target = decodeURIComponent(target);
+    } catch {
+      // A malformed percent escape remains literal and is checked as written.
+    }
+    if (/^[A-Za-z][A-Za-z0-9+.-]*:/.test(target) && !/^[A-Za-z]:[\\/]/.test(target)) continue;
+    if (!path.isAbsolute(target) && !/^[A-Za-z]:[\\/]/.test(target)) {
+      target = path.posix.normalize(target);
+    }
+    refs.add(target);
   }
   const proseSource = source.replace(linkRe, ' ');
   const pathRe = /\b((?:references|scripts|assets|examples)\/[\w./-]+)/g;
