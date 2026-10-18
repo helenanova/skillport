@@ -32,6 +32,58 @@ test('Markdown destinations keep existing exclusions, fragments and titles', () 
   ]);
 });
 
+
+test('Markdown destinations skip non-file URI schemes but keep Windows paths', () => {
+  const raw = [
+    '[phone](tel:+15551234567)',
+    '[data](data:text/plain,hello)',
+    '[urn](urn:isbn:9780132350884)',
+    '[windows](C:\\input.csv)',
+  ].join('\n');
+  assert.deepEqual(refs(raw), ['C:\\input.csv']);
+
+  const issues = runStaticChecks({
+    hasSkillMd: true,
+    frontmatterErrors: [],
+    frontmatter: { name: 'markdown-destinations', description: 'Check Markdown URI destinations.' },
+    dirName: 'markdown-destinations',
+    raw,
+    body: raw,
+    files: [],
+    escapingSymlinks: [],
+  });
+  const absolute = issues.find((i) => i.rule === 'no-absolute-paths');
+  assert.ok(absolute, 'Windows absolute path is still reported');
+  assert.ok(absolute.message.includes('C:\\input.csv'));
+  assert.equal(issues.some((i) => i.message.includes('tel:') || i.message.includes('data:') || i.message.includes('urn:')), false);
+});
+
+test('Markdown destinations normalize dot segments and percent encoding', () => {
+  const raw = [
+    '[dot](./references/guide.md)',
+    '[fold](references/nested/../guide.md)',
+    '[space](references/space%20guide.md)',
+    '[escape](./../outside.md)',
+  ].join('\n');
+  assert.deepEqual(refs(raw), [
+    'references/guide.md',
+    'references/space guide.md',
+    '../outside.md',
+  ]);
+
+  const issues = runStaticChecks({
+    hasSkillMd: true,
+    frontmatterErrors: [],
+    frontmatter: { name: 'markdown-destinations', description: 'Check normalized Markdown destinations.' },
+    dirName: 'markdown-destinations',
+    raw: '[dot](./references/guide.md)\n[space](references/space%20guide.md)',
+    body: '[dot](./references/guide.md)\n[space](references/space%20guide.md)',
+    files: ['references/guide.md', 'references/space guide.md'],
+    escapingSymlinks: [],
+  });
+  assert.equal(issues.some((i) => i.rule === 'ref-exists'), false);
+});
+
 test('full Markdown destination filenames are checked as bundled files', () => {
   const raw = '[Guide](<references/missing guide.md>)';
   const issues = runStaticChecks({
