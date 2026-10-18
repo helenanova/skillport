@@ -37,6 +37,18 @@ test('loader keeps missing manifest state explicit while listing other files', a
   });
 });
 
+
+test('loader surfaces an unreadable manifest instead of reporting it missing', async () => {
+  await temporary(async (root) => {
+    await fs.mkdir(path.join(root, 'SKILL.md'));
+    await assert.rejects(loadSkill(root), (err) => {
+      assert.match(err.message, /cannot read SKILL\.md/);
+      assert.match(err.message, /EISDIR|illegal operation/i);
+      return true;
+    });
+  });
+});
+
 test('loader sorts nested file paths and excludes git and dependency directories', async () => {
   await temporary(async (root) => {
     for (const file of ['z.txt', 'references/b.txt', 'references/a.txt', '.git/config', 'node_modules/pkg/index.js', 'references/.git/config', 'references/node_modules/pkg.js']) {
