@@ -4,6 +4,23 @@ import { checkSkill, DEFAULT_HARNESSES } from './index.js';
 import { formatText, formatMarkdown } from './report.js';
 import { withFixture } from './fixtures.js';
 
+const FIXTURE_FLAGS = new Set(['--json']);
+const CHECK_FLAGS = new Set(['--json', '--markdown', '--no-smoke']);
+const CHECK_VALUE_FLAGS = new Set(['--harness', '--out', '--output-path']);
+
+function unknownOption(args, flags, valueFlags) {
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (!arg.startsWith('-')) continue;
+    if (valueFlags.has(arg)) {
+      i++;
+      continue;
+    }
+    if (!flags.has(arg)) return arg;
+  }
+  return null;
+}
+
 const HELP = `SkillPort - portability test for agent skills
 
 Usage:
@@ -48,6 +65,11 @@ export async function main(argv) {
   const outFile = outIdx !== -1 ? args[outIdx + 1] : null;
 
   if (cmd === 'fixtures') {
+    const unknown = unknownOption(args, FIXTURE_FLAGS, new Set());
+    if (unknown) {
+      process.stderr.write(`error: unknown option ${JSON.stringify(unknown)} for "fixtures"\n`);
+      return 2;
+    }
     const fixturesDir = fileURLToPath(new URL('../fixtures', import.meta.url));
     const entries = (await fs.readdir(fixturesDir, { withFileTypes: true }))
       .filter((e) => e.isDirectory()).map((e) => e.name).sort();
@@ -74,6 +96,11 @@ export async function main(argv) {
     const target = args[args.indexOf('check') + 1];
     if (!target || target.startsWith('-')) {
       process.stderr.write('error: "check" needs a skill directory\n\n' + HELP);
+      return 2;
+    }
+    const unknown = unknownOption(args, CHECK_FLAGS, CHECK_VALUE_FLAGS);
+    if (unknown) {
+      process.stderr.write(`error: unknown option ${JSON.stringify(unknown)} for "check"\n`);
       return 2;
     }
     const hIdx = args.indexOf('--harness');
