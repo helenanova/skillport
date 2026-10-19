@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
+import { fileURLToPath } from 'node:url';
 import { withFixture } from '../src/fixtures.js';
 import { checkSkill } from '../src/index.js';
 
@@ -37,4 +38,13 @@ for (const throws of [false, true]) {
 test('ordinary fixture uses its original directory without reconstruction', async () => {
   const result = await withFixture('/unused-fixtures', 'valid-minimal', async (dir) => dir);
   assert.equal(result, path.join('/unused-fixtures', 'valid-minimal'));
+});
+
+test('fixture expectations cover every bundled fixture exactly', async () => {
+  const root = fileURLToPath(new URL('..', import.meta.url));
+  const fixturesDir = path.join(root, 'fixtures');
+  const expected = JSON.parse(await fs.readFile(path.join(fixturesDir, 'expected.json'), 'utf8'));
+  const entries = await fs.readdir(fixturesDir, { withFileTypes: true });
+  const directories = entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name).sort();
+  assert.deepEqual(directories, Object.keys(expected).sort());
 });
