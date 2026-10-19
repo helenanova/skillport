@@ -61,6 +61,26 @@ test('missing output option argument exits 2', async () => {
   await assert.rejects(run('node', [bin, 'check', fx('generated-output-path'), '--output-path']), (err) => err.code === 2);
 });
 
+test('check rejects an unknown option instead of ignoring a typo', async () => {
+  await assert.rejects(run('node', [bin, 'check', fx('valid-minimal'), '--markdwon']), (err) => {
+    assert.equal(err.code, 2);
+    assert.match(err.stderr, /error: unknown option "--markdwon" for "check"/);
+    assert.doesNotMatch(err.stderr, /unexpected error|TypeError/);
+    assert.equal(err.stdout, '');
+    return true;
+  });
+});
+
+test('fixtures rejects an unknown option instead of ignoring it', async () => {
+  await assert.rejects(run('node', [bin, 'fixtures', '--bogus']), (err) => {
+    assert.equal(err.code, 2);
+    assert.match(err.stderr, /error: unknown option "--bogus" for "fixtures"/);
+    assert.doesNotMatch(err.stderr, /unexpected error|TypeError/);
+    assert.equal(err.stdout, '');
+    return true;
+  });
+});
+
 for (const [format, option] of [['text', []], ['json', ['--json']], ['markdown', ['--markdown']]]) {
   test(`orphan example marker keeps CLI PASS and line warning in ${format}`, async () => {
     const { stdout } = await run('node', [bin, 'check', fx('orphan-example-marker'), '--no-smoke', ...option]);
