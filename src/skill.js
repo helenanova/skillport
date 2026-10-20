@@ -36,23 +36,29 @@ export async function loadSkill(skillDir) {
     skill.body = parsed.body;
     skill.frontmatterErrors = parsed.errors;
   }
-  skill.files = await walk(root, root, skill.escapingSymlinks);
+  // Compare symlink targets against the resolved root: on Windows realpath
+  // expands 8.3 short names and case that os.tmpdir() may preserve.
+  const realRoot = await fs.realpath(root).catch(() => root);
+  skill.files = await walk(root, root, realRoot, skill.escapingSymlinks);
   return skill;
 }
 
-async function walk(dir, root, escapingSymlinks) {
+async function walk(dir, displayRoot, realRoot, escapingSymlinks) {
   const out = [];
   const entries = await fs.readdir(dir, { withFileTypes: true });
   for (const entry of entries) {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) {
       if (entry.name === '.git' || entry.name === 'node_modules') continue;
-      out.push(...(await walk(full, root, escapingSymlinks)));
+      out.push(...(await walk(full, displayRoot, realRoot, escapingSymlinks)));
     } else if (entry.isFile() || entry.isSymbolicLink()) {
-      const rel = path.relative(root, full).split(path.sep).join('/');
+      const rel = path.relative(displayRoot, full).split(path.sep).join('/');
       if (entry.isSymbolicLink()) {
         const real = await fs.realpath(full).catch(() => null);
-        if (!real || (real !== root && !real.startsWith(root + path.sep))) {
+        const norm = (p) => (process.platform === 'win32' && p ? p.toLowerCase() : p);
+        const base = norm(realRoot);
+        const target = norm(real);
+        if (!target || (target !== base && !target.startsWith(base + path.sep))) {
           escapingSymlinks.push(rel);
         }
       }
