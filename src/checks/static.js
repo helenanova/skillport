@@ -27,18 +27,20 @@ export function runStaticChecks(skill, { outputPaths = [] } = {}) {
   }
 
   const { name, description } = skill.frontmatter;
+  // Line of each top-level manifest key, when the loader recorded it.
+  const keyLine = (key) => skill.frontmatterKeyLines?.[key];
 
   if (!name) {
     push('error', 'frontmatter-name', 'frontmatter is missing required key `name`', 'SKILL.md');
   } else {
     if (typeof name !== 'string' || !NAME_RE.test(name)) {
-      push('error', 'name-format', `name "${name}" must be lowercase letters, digits and hyphens (e.g. pdf-tools)`, 'SKILL.md');
+      push('error', 'name-format', `name "${name}" must be lowercase letters, digits and hyphens (e.g. pdf-tools)`, 'SKILL.md', keyLine('name'));
     }
     if (name.length > MAX_NAME) {
-      push('error', 'name-length', `name is ${name.length} chars; harnesses cap it at ${MAX_NAME}`, 'SKILL.md');
+      push('error', 'name-length', `name is ${name.length} chars; harnesses cap it at ${MAX_NAME}`, 'SKILL.md', keyLine('name'));
     }
     if (name !== skill.dirName) {
-      push('warning', 'name-dir-mismatch', `name "${name}" does not match the directory "${skill.dirName}"; some harnesses key skills by directory`, 'SKILL.md');
+      push('warning', 'name-dir-mismatch', `name "${name}" does not match the directory "${skill.dirName}"; some harnesses key skills by directory`, 'SKILL.md', keyLine('name'));
     }
   }
 
@@ -46,10 +48,10 @@ export function runStaticChecks(skill, { outputPaths = [] } = {}) {
     push('error', 'frontmatter-description', 'frontmatter is missing required key `description`', 'SKILL.md');
   } else if (typeof description === 'string') {
     if (description.length > MAX_DESCRIPTION) {
-      push('error', 'description-length', `description is ${description.length} chars; over the ${MAX_DESCRIPTION} char limit`, 'SKILL.md');
+      push('error', 'description-length', `description is ${description.length} chars; over the ${MAX_DESCRIPTION} char limit`, 'SKILL.md', keyLine('description'));
     }
     if (description.length < 20) {
-      push('warning', 'description-thin', 'description is very short; harnesses use it to decide when to load the skill', 'SKILL.md');
+      push('warning', 'description-thin', 'description is very short; harnesses use it to decide when to load the skill', 'SKILL.md', keyLine('description'));
     }
   }
 
@@ -121,13 +123,13 @@ export function runStaticChecks(skill, { outputPaths = [] } = {}) {
       (typeof skill.frontmatter.compatibility !== 'string' ||
        skill.frontmatter.compatibility.length === 0 ||
        skill.frontmatter.compatibility.length > 500)) {
-    push('error', 'compatibility-format', 'compatibility must be a non-empty string of at most 500 characters', 'SKILL.md');
+    push('error', 'compatibility-format', 'compatibility must be a non-empty string of at most 500 characters', 'SKILL.md', keyLine('compatibility'));
   }
   const metadata = skill.frontmatter.metadata;
   if (metadata !== undefined &&
       (typeof metadata !== 'object' || metadata === null || Array.isArray(metadata) ||
        Object.values(metadata).some((v) => typeof v !== 'string' || v.length === 0))) {
-    push('error', 'metadata-format', 'metadata must be a map of non-empty string values', 'SKILL.md');
+    push('error', 'metadata-format', 'metadata must be a map of non-empty string values', 'SKILL.md', keyLine('metadata'));
   }
   for (const f of skill.files) {
     if (f.includes('\0')) push('error', 'filename-sane', `filename contains NUL: ${f}`);
