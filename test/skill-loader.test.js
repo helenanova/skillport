@@ -4,6 +4,7 @@ import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { loadSkill } from '../src/skill.js';
+import { symlinksSupported, SYMLINK_SKIP } from './helpers/links.js';
 
 async function temporary(inspect) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'skillport-loader-'));
@@ -67,7 +68,7 @@ test('loader sorts nested file paths and excludes git and dependency directories
   });
 });
 
-test('loader distinguishes contained, sibling-prefix and dangling symlinks without following directory links', async () => {
+test('loader distinguishes contained, sibling-prefix and dangling symlinks without following directory links', { skip: (await symlinksSupported()) ? false : SYMLINK_SKIP }, async () => {
   await temporary(async (temp) => {
     const root = path.join(temp, 'skill');
     const sibling = path.join(temp, 'skill-other');
