@@ -62,21 +62,50 @@ async function walk(dir, root, escapingSymlinks) {
   return out.sort();
 }
 
-// Local file references inside SKILL.md: markdown links plus
-// `references/...` and `scripts/...` path mentions in prose.
-export function extractReferences(skill) {
-  if (!skill.raw) return [];
-  const { source } = markedMarkdownExamples(skill.raw);
-  const refs = collectReferences(source);
-  // A marked example never suppresses absolute or escaping links.
-  for (const ref of collectReferences(skill.raw)) {
-    if (path.isAbsolute(ref) || /^[A-Za-z]:[\\/]/.test(ref) || ref.startsWith('..')) refs.add(ref);
+// 1-based line/column of a character offset, for diagnostics.
+export function positionAt(source, index) {
+  let line = 1;
+  let lastBreak = -1;
+  for (let i = 0; i < index; i++) {
+    if (source.charCodeAt(i) === 10) {
+      line++;
+      lastBreak = i;
+    }
   }
-  return [...refs].filter(Boolean);
+  return { line, column: index - lastBreak };
 }
 
-function collectReferences(source) {
-  const refs = new Set();
+// Local file references inside SKILL.md: markdown links plus
+// `references/...` and `scripts/...` path mentions in prose.
+// Each detail is { ref, line, column } with the first occurrence position.
+export function extractReferenceDetails(skill) {
+  if (!skill.raw) return [];
+  const { source } = markedMarkdownExamples(skill.raw);
+  const details = collectReferenceDetails(source);
+  const seen = new Set(details.map((d) => d.ref));
+  // A marked example never suppresses absolute or escaping links.
+  for (const detail of collectReferenceDetails(skill.raw)) {
+    const { ref } = detail;
+    if ((path.isAbsolute(ref) || /^[A-Za-z]:[\\/]/.test(ref) || ref.startsWith('..')) && !seen.has(ref)) {
+      seen.add(ref);
+      details.push(detail);
+    }
+  }
+  return details;
+}
+
+export function extractReferences(skill) {
+  return extractReferenceDetails(skill).map((d) => d.ref);
+}
+
+function collectReferenceDetails(source) {
+  const details = [];
+  const seen = new Set();
+  const add = (ref, index) => {
+    if (!ref || seen.has(ref)) return;
+    seen.add(ref);
+    details.push({ ref, ...positionAt(source, index) });
+  };
   const linkRe = /!?\[[^\]\n]*\]\(\s*(?:<((?:\\.|[^<>\n])+)>|((?:\\.|[^\s()])+))(?:\s+["'][^)]*["'])?\s*\)/g;
   let m;
   while ((m = linkRe.exec(source)) !== null) {
@@ -92,14 +121,15 @@ function collectReferences(source) {
     if (!path.isAbsolute(target) && !/^[A-Za-z]:[\\/]/.test(target)) {
       target = path.posix.normalize(target);
     }
-    refs.add(target);
+    add(target, m.index);
   }
-  const proseSource = source.replace(linkRe, ' ');
+  // Blank links with equal-length spaces so prose positions stay accurate.
+  const proseSource = source.replace(linkRe, (match) => ' '.repeat(match.length));
   const pathRe = /\b((?:references|scripts|assets|examples)\/[\w./-]+)/g;
   while ((m = pathRe.exec(proseSource)) !== null) {
-    refs.add(m[1].replace(/[.,;:!?]+$/, ''));
+    add(m[1].replace(/[.,;:!?]+$/, ''), m.index);
   }
-  return refs;
+  return details;
 }
 
 // Exact author marker applies only to the immediately following balanced md fence.
