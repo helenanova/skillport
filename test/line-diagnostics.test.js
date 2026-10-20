@@ -46,3 +46,31 @@ test('text and markdown reports render file:line:column without changing the mes
   assert.ok(formatText(result).includes(`does not exist in the skill ${expected}`));
   assert.ok(formatMarkdown(result).includes(`does not exist in the skill ${expected} |`));
 });
+
+test('metadata diagnostics carry the line of their frontmatter key', () => {
+  const raw = '---\nname: Bad_Name\ndescription: Checks key positions for metadata diagnostics.\ncompatibility: ' + 'x'.repeat(501) + '\n---\nBody text.\n';
+  const issues = runStaticChecks({
+    hasSkillMd: true, frontmatterErrors: [],
+    frontmatter: { name: 'Bad_Name', description: 'Checks key positions for metadata diagnostics.', compatibility: 'x'.repeat(501) },
+    frontmatterKeyLines: { name: 2, description: 3, compatibility: 4 },
+    dirName: 'key-probe', raw, body: 'Body text.\n', files: [], escapingSymlinks: [],
+  });
+  assert.equal(issues.find((i) => i.rule === 'name-format').line, 2);
+  assert.equal(issues.find((i) => i.rule === 'name-dir-mismatch').line, 2);
+  assert.equal(issues.find((i) => i.rule === 'compatibility-format').line, 4);
+});
+
+test('a loaded skill exposes frontmatter key lines for diagnostics', async () => {
+  const { promises: fs } = await import('node:fs');
+  const os = await import('node:os');
+  const path = await import('node:path');
+  const { loadSkill } = await import('../src/skill.js');
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'skillport-keylines-'));
+  try {
+    await fs.writeFile(path.join(root, 'SKILL.md'), '---\nname: key-probe\ndescription: Loaded skills carry manifest key lines.\n---\nBody\n');
+    const skill = await loadSkill(root);
+    assert.deepEqual(skill.frontmatterKeyLines, { name: 2, description: 3 });
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
