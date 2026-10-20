@@ -4,14 +4,16 @@
 
 export function parseFrontmatter(markdown) {
   const result = { data: {}, body: markdown, errors: [] };
+  // Errors are { message, line } with a 1-based line in SKILL.md.
+  const fail = (message, line = 1) => result.errors.push({ message, line });
   const firstBreak = markdown.indexOf('\n');
   const firstLine = (firstBreak === -1 ? markdown : markdown.slice(0, firstBreak)).replace(/\r$/, '');
   if (firstLine !== '---') {
-    result.errors.push('no frontmatter block at the top of the file');
+    fail('no frontmatter block at the top of the file');
     return result;
   }
   if (firstBreak === -1) {
-    result.errors.push('frontmatter block is not closed with a --- line');
+    fail('frontmatter block is not closed with a --- line');
     return result;
   }
 
@@ -32,14 +34,16 @@ export function parseFrontmatter(markdown) {
     lineStart = nextBreak + 1;
   }
   if (rawEnd === -1) {
-    result.errors.push('frontmatter block is not closed with a --- line');
+    fail('frontmatter block is not closed with a --- line');
     return result;
   }
   const raw = markdown.slice(rawStart, rawEnd).trim();
   result.body = markdown.slice(bodyStart);
   const lines = raw.split(/\r?\n/);
   let currentKey = null;
-  for (const line of lines) {
+  for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+    const line = lines[lineIndex];
+    const lineNumber = lineIndex + 2; // line 1 is the opening --- delimiter
     if (!line.trim() || line.trim().startsWith('#')) continue;
     const listItem = line.match(/^\s+-\s+(.*)$/);
     if (listItem && currentKey) {
@@ -53,7 +57,7 @@ export function parseFrontmatter(markdown) {
         result.data.metadata = {};
       }
       if (typeof result.data.metadata !== 'object' || Array.isArray(result.data.metadata)) {
-        result.errors.push(`unparseable frontmatter line: ${line.trim()}`);
+        fail(`unparseable frontmatter line: ${line.trim()}`, lineNumber);
         continue;
       }
       result.data.metadata[mapItem[1]] = mapItem[2].trim().replace(/^["']|["']$/g, '');
@@ -61,7 +65,7 @@ export function parseFrontmatter(markdown) {
     }
     const kv = line.match(/^([A-Za-z0-9_-]+):\s*(.*)$/);
     if (!kv) {
-      result.errors.push(`unparseable frontmatter line: ${line.trim()}`);
+      fail(`unparseable frontmatter line: ${line.trim()}`, lineNumber);
       continue;
     }
     currentKey = kv[1];
