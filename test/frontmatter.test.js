@@ -40,7 +40,7 @@ for (const malformed of ['---junk', '----', '--- ']) {
     const { data, body, errors } = parseFrontmatter(input);
     assert.deepEqual(data, {});
     assert.equal(body, input);
-    assert.deepEqual(errors, ['no frontmatter block at the top of the file']);
+    assert.deepEqual(errors, [{ message: 'no frontmatter block at the top of the file', line: 1 }]);
   });
 }
 
@@ -50,7 +50,7 @@ for (const malformed of ['----', '--- ']) {
     const { data, body, errors } = parseFrontmatter(input);
     assert.deepEqual(data, {});
     assert.equal(body, input);
-    assert.deepEqual(errors, ['frontmatter block is not closed with a --- line']);
+    assert.deepEqual(errors, [{ message: 'frontmatter block is not closed with a --- line', line: 1 }]);
   });
 }
 
@@ -69,4 +69,15 @@ test('reports missing frontmatter', () => {
 test('reports unclosed frontmatter', () => {
   const { errors } = parseFrontmatter('---\nname: foo\n# never closed\n');
   assert.equal(errors.length, 1);
+});
+
+test('unparseable lines report their 1-based position in SKILL.md', () => {
+  const { errors } = parseFrontmatter('---\nname: demo\noops\n---\nBody\n');
+  assert.deepEqual(errors, [{ message: 'unparseable frontmatter line: oops', line: 3 }]);
+});
+
+test('a later unparseable line keeps its exact position', () => {
+  const { errors } = parseFrontmatter('---\nname: demo\ndescription: ok\n\n# note\n  broken  indent\n---\nBody\n');
+  assert.equal(errors.length, 1);
+  assert.equal(errors[0].line, 6);
 });
