@@ -6,9 +6,11 @@ import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { withFixture } from '../src/fixtures.js';
 import { checkSkill } from '../src/index.js';
+import { symlinksSupported, SYMLINK_SKIP } from './helpers/links.js';
 
+const canSymlink = await symlinksSupported();
 for (const throws of [false, true]) {
-  test(`packaged symlink fixture is negative, read-only and cleaned${throws ? ' on rejection' : ''}`, async () => {
+  test(`packaged symlink fixture is negative, read-only and cleaned${throws ? ' on rejection' : ''}`, { skip: canSymlink ? false : SYMLINK_SKIP }, async () => {
     const temp = await fs.mkdtemp(path.join(os.tmpdir(), 'skillport-package-test-'));
     const fixture = path.join(temp, 'symlink-escape');
     let staged;
