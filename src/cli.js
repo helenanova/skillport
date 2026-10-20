@@ -2,10 +2,11 @@ import { fileURLToPath } from 'node:url';
 import { promises as fs } from 'node:fs';
 import { checkSkill, DEFAULT_HARNESSES } from './index.js';
 import { formatText, formatMarkdown } from './report.js';
+import { formatSarif } from './sarif.js';
 import { withFixture } from './fixtures.js';
 
 const FIXTURE_FLAGS = new Set(['--json']);
-const CHECK_FLAGS = new Set(['--json', '--markdown', '--no-smoke']);
+const CHECK_FLAGS = new Set(['--json', '--markdown', '--sarif', '--no-smoke']);
 const CHECK_VALUE_FLAGS = new Set(['--harness', '--out', '--output-path']);
 
 function unknownOption(args, flags, valueFlags) {
@@ -35,10 +36,16 @@ Options for "check":
   --no-smoke          Skip smoke tests (static checks only)
   --json              Machine-readable report to stdout
   --markdown          GitHub-Flavored Markdown report to stdout
+  --sarif             SARIF 2.1.0 report (code scanning / PR annotations) to stdout
   --out <file>        Also write the chosen report to a file
 
 Exit codes: 0 = pass, 1 = portability errors, 2 = usage error
 `;
+
+async function packageVersion() {
+  const pkg = JSON.parse(await fs.readFile(new URL('../package.json', import.meta.url), 'utf8'));
+  return pkg.version;
+}
 
 export async function main(argv) {
   const args = argv.slice(2);
@@ -49,8 +56,7 @@ export async function main(argv) {
     return 0;
   }
   if (args.includes('--version') || args.includes('-v')) {
-    const pkg = JSON.parse(await fs.readFile(new URL('../package.json', import.meta.url), 'utf8'));
-    process.stdout.write(`${pkg.version}\n`);
+    process.stdout.write(`${await packageVersion()}\n`);
     return 0;
   }
 
@@ -61,6 +67,7 @@ export async function main(argv) {
 
   const json = args.includes('--json');
   const markdown = args.includes('--markdown');
+  const sarif = args.includes('--sarif');
   const outIdx = args.indexOf('--out');
   const outFile = outIdx !== -1 ? args[outIdx + 1] : null;
 
@@ -133,7 +140,9 @@ export async function main(argv) {
       return 2;
     }
 
-    const rendered = json ? JSON.stringify(result, null, 2) : markdown ? formatMarkdown(result) : formatText(result);
+    const rendered = json ? JSON.stringify(result, null, 2)
+      : sarif ? formatSarif(result, { version: await packageVersion() })
+      : markdown ? formatMarkdown(result) : formatText(result);
     process.stdout.write(rendered + '\n');
     if (outFile) {
       try {
