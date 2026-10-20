@@ -81,3 +81,20 @@ test('a later unparseable line keeps its exact position', () => {
   assert.equal(errors.length, 1);
   assert.equal(errors[0].line, 6);
 });
+
+test('duplicate top-level keys are reported with their line and keep the first value', () => {
+  const { data, errors } = parseFrontmatter('---\nname: demo\ndescription: first\ndescription: second\n---\nBody\n');
+  assert.equal(data.description, 'first');
+  assert.deepEqual(errors, [{ message: 'duplicate frontmatter key "description"', line: 4 }]);
+});
+
+test('duplicate metadata keys are reported with their line', () => {
+  const { data, errors } = parseFrontmatter('---\nname: demo\nmetadata:\n  author: one\n  author: two\n---\nBody\n');
+  assert.deepEqual(data.metadata, { author: 'one' });
+  assert.deepEqual(errors, [{ message: 'duplicate metadata key "author"', line: 5 }]);
+});
+
+test('keyLines records the 1-based line of each top-level key', () => {
+  const { keyLines } = parseFrontmatter('---\nname: demo\ndescription: ok\nmetadata:\n  author: one\n---\nBody\n');
+  assert.deepEqual(keyLines, { name: 2, description: 3, metadata: 4 });
+});
