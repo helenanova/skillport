@@ -3,7 +3,7 @@
 // Not a general YAML parser - documented MVP trade-off in README.
 
 export function parseFrontmatter(markdown) {
-  const result = { data: {}, body: markdown, errors: [] };
+  const result = { data: {}, body: markdown, errors: [], keyLines: {} };
   // Errors are { message, line } with a 1-based line in SKILL.md.
   const fail = (message, line = 1) => result.errors.push({ message, line });
   const firstBreak = markdown.indexOf('\n');
@@ -60,6 +60,10 @@ export function parseFrontmatter(markdown) {
         fail(`unparseable frontmatter line: ${line.trim()}`, lineNumber);
         continue;
       }
+      if (Object.hasOwn(result.data.metadata, mapItem[1])) {
+        fail(`duplicate metadata key "${mapItem[1]}"`, lineNumber);
+        continue;
+      }
       result.data.metadata[mapItem[1]] = mapItem[2].trim().replace(/^["']|["']$/g, '');
       continue;
     }
@@ -68,7 +72,12 @@ export function parseFrontmatter(markdown) {
       fail(`unparseable frontmatter line: ${line.trim()}`, lineNumber);
       continue;
     }
+    if (Object.hasOwn(result.data, kv[1])) {
+      fail(`duplicate frontmatter key "${kv[1]}"`, lineNumber);
+      continue;
+    }
     currentKey = kv[1];
+    result.keyLines[currentKey] = lineNumber;
     const value = kv[2].trim().replace(/^["']|["']$/g, '');
     result.data[currentKey] = value === '' ? [] : value;
   }
