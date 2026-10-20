@@ -43,7 +43,7 @@ export const HARNESSES = {
       const issues = [];
       // Codex parses the manifest strictly: any parse error is fatal there.
       for (const err of skill.frontmatterErrors) {
-        issues.push({ level: 'error', rule: 'cx-strict-frontmatter', message: `strict manifest parse fails: ${err}` });
+        issues.push({ level: 'error', rule: 'cx-strict-frontmatter', message: `strict manifest parse fails: ${err.message}` });
       }
       const name = skill.frontmatter.name;
       if (name && typeof name === 'string' && !NAME_RE.test(name)) {
