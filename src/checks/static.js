@@ -1,8 +1,8 @@
 import path from 'node:path';
-import { extractReferences, markedMarkdownExamples } from '../skill.js';
+import { extractReferenceDetails, markedMarkdownExamples, positionAt } from '../skill.js';
 
 // Harness-agnostic format checks. Each rule returns zero or more issues:
-// { level: 'error'|'warning', rule, message, file? }
+// { level: 'error'|'warning', rule, message, file?, line?, column? }
 
 const NAME_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const MAX_NAME = 64;
@@ -10,7 +10,12 @@ const MAX_DESCRIPTION = 1024;
 
 export function runStaticChecks(skill, { outputPaths = [] } = {}) {
   const issues = [];
-  const push = (level, rule, message, file) => issues.push({ level, rule, message, file });
+  const push = (level, rule, message, file, line, column) => {
+    const issue = { level, rule, message, file };
+    if (line !== undefined) issue.line = line;
+    if (column !== undefined) issue.column = column;
+    issues.push(issue);
+  };
 
   if (!skill.hasSkillMd) {
     push('error', 'skill-md-exists', 'SKILL.md is missing at the skill root');
@@ -18,7 +23,7 @@ export function runStaticChecks(skill, { outputPaths = [] } = {}) {
   }
 
   for (const err of skill.frontmatterErrors) {
-    push('error', 'frontmatter-parse', `frontmatter: ${err}`, 'SKILL.md');
+    push('error', 'frontmatter-parse', `frontmatter: ${err.message}`, 'SKILL.md', err.line);
   }
 
   const { name, description } = skill.frontmatter;
@@ -56,22 +61,21 @@ export function runStaticChecks(skill, { outputPaths = [] } = {}) {
   const marked = markedMarkdownExamples(skill.raw);
   const examples = marked.count;
   for (const line of marked.ignoredMarkerLines) {
-    push('warning', 'example-marker-unused', `example marker at line ${line} did not exclude a balanced immediately-following md/markdown block; references remain checked`, 'SKILL.md');
+    push('warning', 'example-marker-unused', `example marker at line ${line} did not exclude a balanced immediately-following md/markdown block; references remain checked`, 'SKILL.md', line);
   }
   if (examples) push('warning', 'marked-example', `${examples} author-marked Markdown example block(s) excluded from bundled-file lookup; dependencies inside are not verified`, 'SKILL.md');
-  const refs = extractReferences(skill);
   const fileSet = new Set(skill.files);
-  for (const ref of refs) {
+  for (const { ref, line, column } of extractReferenceDetails(skill)) {
     if (path.isAbsolute(ref) || /^[A-Za-z]:[\\/]/.test(ref)) {
-      push('error', 'no-absolute-paths', `absolute path reference "${ref}" will not resolve on another machine`, 'SKILL.md');
+      push('error', 'no-absolute-paths', `absolute path reference "${ref}" will not resolve on another machine`, 'SKILL.md', line, column);
       continue;
     }
     if (ref.startsWith('..')) {
-      push('error', 'no-parent-escape', `reference "${ref}" escapes the skill directory`, 'SKILL.md');
+      push('error', 'no-parent-escape', `reference "${ref}" escapes the skill directory`, 'SKILL.md', line, column);
       continue;
     }
     if (!fileSet.has(ref)) {
-      push('error', 'ref-exists', `referenced file "${ref}" does not exist in the skill`, 'SKILL.md');
+      push('error', 'ref-exists', `referenced file "${ref}" does not exist in the skill`, 'SKILL.md', line, column);
     }
   }
 
@@ -91,17 +95,17 @@ export function runStaticChecks(skill, { outputPaths = [] } = {}) {
   const usedOutputs = new Set();
 
   // Absolute paths anywhere in the manifest body (machine-specific).
-  const absBody = skill.raw.match(/(?<![\w/.-])\/(?:Users|home|opt|var|tmp)\/(?:[\w./-]|<[\w-]+>)+/g);
-  if (absBody) {
-    for (const p of absBody) {
-      if (/<[\w-]+>/.test(p)) {
-        push('error', 'no-absolute-paths', `absolute path template "${p}" is not an exact generated-output file; resolve the placeholder before declaring an output`, 'SKILL.md');
-      } else if (validOutputs.has(p)) {
-        usedOutputs.add(p);
-        push('warning', 'declared-output-path', `"${p}" is explicitly declared as generated output; input use is not verified`, 'SKILL.md');
-      } else {
-        push('error', 'no-absolute-paths', `absolute path "${p}" is machine-specific`, 'SKILL.md');
-      }
+  const absRe = /(?<![\w/.-])\/(?:Users|home|opt|var|tmp)\/(?:[\w./-]|<[\w-]+>)+/g;
+  for (const match of skill.raw.matchAll(absRe)) {
+    const p = match[0];
+    const { line, column } = positionAt(skill.raw, match.index);
+    if (/<[\w-]+>/.test(p)) {
+      push('error', 'no-absolute-paths', `absolute path template "${p}" is not an exact generated-output file; resolve the placeholder before declaring an output`, 'SKILL.md', line, column);
+    } else if (validOutputs.has(p)) {
+      usedOutputs.add(p);
+      push('warning', 'declared-output-path', `"${p}" is explicitly declared as generated output; input use is not verified`, 'SKILL.md', line, column);
+    } else {
+      push('error', 'no-absolute-paths', `absolute path "${p}" is machine-specific`, 'SKILL.md', line, column);
     }
   }
 
