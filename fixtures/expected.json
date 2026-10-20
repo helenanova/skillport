@@ -132,5 +132,11 @@
       "marked-example",
       "ref-exists"
     ]
+  },
+  "duplicate-frontmatter-key": {
+    "ok": false,
+    "rules": [
+      "frontmatter-parse"
+    ]
   }
 }
