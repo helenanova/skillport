@@ -52,7 +52,7 @@ export async function smokeTest(skill, harness) {
       if (!staged.hasSkillMd) {
         step('discovery', false, 'loader cannot find SKILL.md at the expected path');
       } else if (staged.frontmatterErrors.length > 0) {
-        step('discovery', false, `manifest parse errors: ${staged.frontmatterErrors.join('; ')}`);
+        step('discovery', false, `manifest parse errors: ${staged.frontmatterErrors.map((e) => e.message).join('; ')}`);
       } else if (!staged.frontmatter.name || !staged.frontmatter.description) {
         step('discovery', false, 'manifest is missing name or description after staging');
       } else {
