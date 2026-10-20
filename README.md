@@ -90,6 +90,7 @@ sandboxed script execution are on the roadmap below.
 ```bash
 npx skillport check my-skill --json       # machine-readable
 npx skillport check my-skill --markdown   # GitHub-Flavored Markdown
+npx skillport check my-skill --sarif      # SARIF 2.1.0 for code scanning
 npx skillport check my-skill --out report.md
 ```
 
