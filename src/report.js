@@ -12,6 +12,14 @@ function mdCode(value) {
   return `\`${mdCell(value)}\``;
 }
 
+// Suffix like " (SKILL.md:12:5)" when a diagnostic carries a position.
+function location(issue) {
+  if (typeof issue.line !== 'number') return '';
+  const file = issue.file || 'SKILL.md';
+  const column = typeof issue.column === 'number' ? `:${issue.column}` : '';
+  return ` (${file}:${issue.line}${column})`;
+}
+
 export function formatText(result) {
   const lines = [];
   const title = result.skillName || result.skillDir;
@@ -27,7 +35,7 @@ export function formatText(result) {
   const staticWarnings = result.static.issues.filter((i) => i.level === 'warning');
   lines.push(`Format checks:  ${staticErrors.length === 0 ? `${CHECK} clean` : `${CROSS} ${staticErrors.length} error(s)`}${staticWarnings.length ? `, ${staticWarnings.length} warning(s)` : ''}`);
   for (const i of result.static.issues) {
-    lines.push(`  ${i.level === 'error' ? CROSS : '!'} [${i.rule}] ${i.message}`);
+    lines.push(`  ${i.level === 'error' ? CROSS : '!'} [${i.rule}] ${i.message}${location(i)}`);
   }
   lines.push('');
 
@@ -36,7 +44,7 @@ export function formatText(result) {
     const mode = h.smokeTested ? 'static + smoke' : 'static only';
     lines.push(`  ${h.ok ? CHECK : CROSS} ${h.label.padEnd(12)} (${mode})`);
     for (const i of h.issues) {
-      lines.push(`    ${i.level === 'error' ? CROSS : '!'} [${i.rule}] ${i.message}`);
+      lines.push(`    ${i.level === 'error' ? CROSS : '!'} [${i.rule}] ${i.message}${location(i)}`);
     }
     for (const s of h.steps) {
       if (s.ok && (s.name === 'harness-cli' || s.name === 'stage')) continue; // keep output tight
@@ -77,7 +85,7 @@ export function formatMarkdown(result) {
     lines.push('| Level | Where | Rule | Problem |');
     lines.push('| --- | --- | --- | --- |');
     for (const i of issues) {
-      lines.push(`| ${mdCell(i.level)} | ${mdCell(i.where)} | ${mdCode(i.rule)} | ${mdCell(i.message)} |`);
+      lines.push(`| ${mdCell(i.level)} | ${mdCell(i.where)} | ${mdCode(i.rule)} | ${mdCell(i.message)}${mdCell(location(i))} |`);
     }
     lines.push('');
   }
