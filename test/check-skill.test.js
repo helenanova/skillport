@@ -4,6 +4,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { checkSkill } from '../src/index.js';
 import { withFixture } from '../src/fixtures.js';
+import { symlinksSupported, SYMLINK_SKIP } from './helpers/links.js';
+
+const canSymlink = await symlinksSupported();
 
 const fixtures = path.join(fileURLToPath(new URL('..', import.meta.url)), 'fixtures');
 const fx = (name) => path.join(fixtures, name);
@@ -43,7 +46,7 @@ test('non-code scripts asset is not treated as an executable', async () => {
   }
 });
 
-test('escaping symlink fails before copying or syntax checking', async () => {
+test('escaping symlink fails before copying or syntax checking', { skip: canSymlink ? false : SYMLINK_SKIP }, async () => {
   const r = await withFixture(fixtures, 'symlink-escape', checkSkill);
   assert.equal(r.ok, false);
   assert.ok(r.static.issues.some((i) => i.rule === 'symlink-escape'));
@@ -178,7 +181,7 @@ test('declared output never exempts a Markdown-linked absolute dependency', asyn
   { outputPaths: ['/tmp/data.json'] });
   assert.ok(issues.some((i) => i.rule === 'no-absolute-paths'));
 });
-test('output config cannot hide a parent escape or escaping symlink', async () => {
+test('output config cannot hide a parent escape or escaping symlink', { skip: canSymlink ? false : SYMLINK_SKIP }, async () => {
   const r = await withFixture(fixtures, 'symlink-escape', (dir) =>
     checkSkill(dir, { outputPaths: ['/tmp/unused.html'] }));
   assert.equal(r.ok, false);
