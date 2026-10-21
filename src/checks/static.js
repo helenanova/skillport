@@ -129,7 +129,11 @@ export function runStaticChecks(skill, { outputPaths = [] } = {}) {
   if (metadata !== undefined &&
       (typeof metadata !== 'object' || metadata === null || Array.isArray(metadata) ||
        Object.values(metadata).some((v) => typeof v !== 'string' || v.length === 0))) {
-    push('error', 'metadata-format', 'metadata must be a map of non-empty string values', 'SKILL.md', keyLine('metadata'));
+    const badKey = (typeof metadata === 'object' && metadata !== null && !Array.isArray(metadata))
+      ? Object.keys(metadata).find((k) => typeof metadata[k] !== 'string' || metadata[k].length === 0)
+      : undefined;
+    const line = (badKey && skill.frontmatterMetadataKeyLines?.[badKey]) || keyLine('metadata');
+    push('error', 'metadata-format', 'metadata must be a map of non-empty string values', 'SKILL.md', line);
   }
   for (const f of skill.files) {
     if (f.includes('\0')) push('error', 'filename-sane', `filename contains NUL: ${f}`);
