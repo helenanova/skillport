@@ -18,6 +18,7 @@ export async function loadSkill(skillDir) {
     body: '',
     frontmatterErrors: [],
     frontmatterKeyLines: {},
+    frontmatterMetadataKeyLines: {},
     files: [],
     escapingSymlinks: [],
   };
@@ -37,6 +38,7 @@ export async function loadSkill(skillDir) {
     skill.body = parsed.body;
     skill.frontmatterErrors = parsed.errors;
     skill.frontmatterKeyLines = parsed.keyLines;
+    skill.frontmatterMetadataKeyLines = parsed.metadataKeyLines;
   }
   // Compare symlink targets against the resolved root: on Windows realpath
   // expands 8.3 short names and case that os.tmpdir() may preserve.
