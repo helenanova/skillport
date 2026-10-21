@@ -1,5 +1,7 @@
 # SkillPort
 
+[![CI](https://github.com/helenanova/skillport/actions/workflows/ci.yml/badge.svg)](https://github.com/helenanova/skillport/actions/workflows/ci.yml)
+
 **One agent skill. Every harness. Know exactly where it breaks.**
 
 SkillPort is a portability test for agent skills. Point it at one skill folder
@@ -94,10 +96,25 @@ npx skillport check my-skill --sarif      # SARIF 2.1.0 for code scanning
 npx skillport check my-skill --out report.md
 ```
 
-The repo's own CI publishes the Markdown report for all twenty-five bundled fixtures
+The repo's own CI publishes the Markdown report for all twenty-six bundled fixtures
 to the GitHub Actions job summary on every push.
 
-## The twenty-five fixtures
+### Code scanning (SARIF)
+
+Feed the SARIF report to GitHub code scanning to get portability failures as
+pull request annotations:
+
+```yaml
+- run: npx skillport check ./skills/my-skill --sarif --out results.sarif
+- uses: github/codeql-action/upload-sarif@v4
+  with:
+    sarif_file: results.sarif
+```
+
+Diagnostics carry `file:line:column` positions, so annotations land on the
+exact manifest line.
+
+## The twenty-six fixtures
 
 `fixtures/` ships the failures we kept hitting by hand, so the tool is tested
 against real breakage: missing `SKILL.md`, broken reference paths, missing
