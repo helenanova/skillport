@@ -40,6 +40,8 @@ jobs:
       - run: npm run lint
       - name: Run tests (symlink-dependent tests skip without privilege)
         run: npm test
+      - name: Run the fixture suite
+        run: npm run check:fixtures
 
   fixture-matrix:
     runs-on: ubuntu-24.04
