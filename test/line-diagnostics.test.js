@@ -74,3 +74,24 @@ test('a loaded skill exposes frontmatter key lines for diagnostics', async () =>
     await fs.rm(root, { recursive: true, force: true });
   }
 });
+
+test('metadata-format points at the offending subkey line', () => {
+  const issues = runStaticChecks({
+    hasSkillMd: true, frontmatterErrors: [],
+    frontmatter: { name: 'meta-probe', description: 'Check metadata subkey positions.', metadata: { author: 'ok', empty: '' } },
+    frontmatterKeyLines: { name: 2, description: 3, metadata: 4 },
+    frontmatterMetadataKeyLines: { author: 5, empty: 6 },
+    dirName: 'meta-probe', raw: '', body: 'Body.\n', files: [], escapingSymlinks: [],
+  });
+  assert.equal(issues.find((i) => i.rule === 'metadata-format').line, 6);
+});
+
+test('metadata-format falls back to the metadata key line without subkey lines', () => {
+  const issues = runStaticChecks({
+    hasSkillMd: true, frontmatterErrors: [],
+    frontmatter: { name: 'meta-probe', description: 'Check metadata fallback position.', metadata: { empty: '' } },
+    frontmatterKeyLines: { name: 2, description: 3, metadata: 4 },
+    dirName: 'meta-probe', raw: '', body: 'Body.\n', files: [], escapingSymlinks: [],
+  });
+  assert.equal(issues.find((i) => i.rule === 'metadata-format').line, 4);
+});
