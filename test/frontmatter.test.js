@@ -98,3 +98,8 @@ test('keyLines records the 1-based line of each top-level key', () => {
   const { keyLines } = parseFrontmatter('---\nname: demo\ndescription: ok\nmetadata:\n  author: one\n---\nBody\n');
   assert.deepEqual(keyLines, { name: 2, description: 3, metadata: 4 });
 });
+
+test('metadataKeyLines records the 1-based line of each metadata subkey', () => {
+  const { metadataKeyLines } = parseFrontmatter('---\nname: demo\nmetadata:\n  author: one\n  version: "1"\n---\nBody\n');
+  assert.deepEqual(metadataKeyLines, { author: 4, version: 5 });
+});
