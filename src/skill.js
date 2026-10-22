@@ -85,23 +85,59 @@ export function positionAt(source, index) {
   return { line, column: index - lastBreak };
 }
 
-// Local file references inside SKILL.md: markdown links plus
-// `references/...` and `scripts/...` path mentions in prose.
-// Each detail is { ref, line, column } with the first occurrence position.
-export function extractReferenceDetails(skill) {
-  if (!skill.raw) return [];
-  const { source } = markedMarkdownExamples(skill.raw);
-  const details = collectReferenceDetails(source);
-  const seen = new Set(details.map((d) => d.ref));
+// `<!-- skillport:ignore-path references/x.md -->` excludes one exact path
+// from bundled-file lookup. Like a marked example, it never suppresses
+// absolute or escaping references.
+export function ignorePathDirectives(raw) {
+  const directives = [];
+  const re = /<!--\s*skillport:ignore-path\s+(\S+?)\s*-->/g;
+  let m;
+  while ((m = re.exec(raw)) !== null) {
+    directives.push({ path: m[1], ...positionAt(raw, m.index) });
+  }
+  return directives;
+}
+
+function isAbsoluteOrEscape(ref) {
+  return path.isAbsolute(ref) || /^[A-Za-z]:[\\/]/.test(ref) || ref.startsWith('..');
+}
+
+// References plus how the author-scoped ignore-path directives applied.
+export function referenceReport(skill) {
+  if (!skill.raw) return { details: [], directives: [] };
+  const directives = ignorePathDirectives(skill.raw);
+  // Directive comments must not reference themselves; blank them with
+  // equal-length spaces so positions of real references stay accurate.
+  const { source: marked } = markedMarkdownExamples(skill.raw);
+  const source = marked.replace(/<!--\s*skillport:ignore-path\s+\S+?\s*-->/g,
+    (comment) => ' '.repeat(comment.length));
+  const all = collectReferenceDetails(source);
+  const seen = new Set(all.map((d) => d.ref));
   // A marked example never suppresses absolute or escaping links.
   for (const detail of collectReferenceDetails(skill.raw)) {
-    const { ref } = detail;
-    if ((path.isAbsolute(ref) || /^[A-Za-z]:[\\/]/.test(ref) || ref.startsWith('..')) && !seen.has(ref)) {
-      seen.add(ref);
-      details.push(detail);
+    if (isAbsoluteOrEscape(detail.ref) && !seen.has(detail.ref)) {
+      seen.add(detail.ref);
+      all.push(detail);
     }
   }
-  return details;
+  const ignored = new Set(directives.map((d) => d.path));
+  const used = new Set();
+  const details = all.filter((d) => {
+    if (!isAbsoluteOrEscape(d.ref) && ignored.has(d.ref)) {
+      used.add(d.ref);
+      return false;
+    }
+    return true;
+  });
+  return {
+    details,
+    directives: directives.map((d) => ({ ...d, used: used.has(d.path) })),
+  };
+}
+
+// Each detail is { ref, line, column } with the first occurrence position.
+export function extractReferenceDetails(skill) {
+  return referenceReport(skill).details;
 }
 
 export function extractReferences(skill) {
