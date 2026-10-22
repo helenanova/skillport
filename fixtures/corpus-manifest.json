@@ -1,0 +1,63 @@
+{
+  "comment": "Real-world skill corpus: verbatim snapshots of public skills used as regression fixtures. Do not edit the snapshot files; re-snapshot from the pinned source instead. Sources are re-fetched and re-pinned deliberately, never automatically.",
+  "sources": {
+    "anthropics/skills": {
+      "repo": "https://github.com/anthropics/skills",
+      "commit": "dbd4588f9e1033efb41dad4bef2f7947c8993d44",
+      "license": "Apache-2.0",
+      "licenseNote": "Per-skill LICENSE.txt (Apache-2.0) is copied with each snapshot; file-edge whitespace (leading blank line, final newline) is normalized by the GitHub web editor, license text unchanged. The docx/pdf/pptx/xlsx skills in that repo are source-available, not open source, and are excluded."
+    },
+    "obra/superpowers": {
+      "repo": "https://github.com/obra/superpowers",
+      "commit": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
+      "license": "MIT",
+      "licenseNote": "MIT LICENSE at the repository root covers all skills; not copied per-skill because the upstream skills carry no per-skill license file."
+    }
+  },
+  "fixtures": {
+    "brand-guidelines": {
+      "source": "anthropics/skills",
+      "path": "skills/brand-guidelines",
+      "files": [
+        "LICENSE.txt",
+        "SKILL.md"
+      ],
+      "note": "Passes cleanly; covers a plain scalar frontmatter plus an extra license key."
+    },
+    "academy-guide": {
+      "source": "anthropics/skills",
+      "path": "skills/academy-guide",
+      "files": [
+        "LICENSE.txt",
+        "SKILL.md"
+      ],
+      "note": "Folded block scalar description (description: >). One documented finding: the placeholder link [Title](URL) in a blockquote example is reported as ref-exists at SKILL.md:82:40. Recorded as a known false positive candidate, not edited, because corpus files stay verbatim."
+    },
+    "discernment-nudge": {
+      "source": "anthropics/skills",
+      "path": "skills/discernment-nudge",
+      "files": [
+        "LICENSE.txt",
+        "SKILL.md"
+      ],
+      "note": "Folded block scalar description with a content line that starts with an em dash; passes cleanly."
+    },
+    "verification-before-completion": {
+      "source": "obra/superpowers",
+      "path": "skills/verification-before-completion",
+      "files": [
+        "SKILL.md"
+      ],
+      "note": "Single-file skill; passes cleanly."
+    },
+    "requesting-code-review": {
+      "source": "obra/superpowers",
+      "path": "skills/requesting-code-review",
+      "files": [
+        "SKILL.md",
+        "code-reviewer.md"
+      ],
+      "note": "Two-file skill whose SKILL.md links code-reviewer.md at the skill root; passes cleanly."
+    }
+  }
+}
