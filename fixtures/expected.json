@@ -138,5 +138,20 @@
     "rules": [
       "frontmatter-parse"
     ]
+  },
+  "description-not-string": {
+    "ok": false,
+    "rules": [
+      "description-format"
+    ]
+  },
+  "ignored-prose-path": {
+    "ok": true
+  },
+  "ignore-path-unused": {
+    "ok": true,
+    "rules": [
+      "ignore-path-unused"
+    ]
   }
 }
