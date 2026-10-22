@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { extractReferenceDetails, markedMarkdownExamples, positionAt } from '../skill.js';
+import { referenceReport, markedMarkdownExamples, positionAt } from '../skill.js';
 
 // Harness-agnostic format checks. Each rule returns zero or more issues:
 // { level: 'error'|'warning', rule, message, file?, line?, column? }
@@ -46,6 +46,8 @@ export function runStaticChecks(skill, { outputPaths = [] } = {}) {
 
   if (!description) {
     push('error', 'frontmatter-description', 'frontmatter is missing required key `description`', 'SKILL.md');
+  } else if (typeof description !== 'string') {
+    push('error', 'description-format', 'description must be a single string; lists or maps are not valid', 'SKILL.md', keyLine('description'));
   } else if (typeof description === 'string') {
     if (description.length > MAX_DESCRIPTION) {
       push('error', 'description-length', `description is ${description.length} chars; over the ${MAX_DESCRIPTION} char limit`, 'SKILL.md', keyLine('description'));
@@ -66,8 +68,14 @@ export function runStaticChecks(skill, { outputPaths = [] } = {}) {
     push('warning', 'example-marker-unused', `example marker at line ${line} did not exclude a balanced immediately-following md/markdown block; references remain checked`, 'SKILL.md', line);
   }
   if (examples) push('warning', 'marked-example', `${examples} author-marked Markdown example block(s) excluded from bundled-file lookup; dependencies inside are not verified`, 'SKILL.md');
+  const { details: refDetails, directives } = referenceReport(skill);
+  for (const d of directives) {
+    if (!d.used) {
+      push('warning', 'ignore-path-unused', `ignore-path directive for "${d.path}" did not match any reference; it has no effect`, 'SKILL.md', d.line, d.column);
+    }
+  }
   const fileSet = new Set(skill.files);
-  for (const { ref, line, column } of extractReferenceDetails(skill)) {
+  for (const { ref, line, column } of refDetails) {
     if (path.isAbsolute(ref) || /^[A-Za-z]:[\\/]/.test(ref)) {
       push('error', 'no-absolute-paths', `absolute path reference "${ref}" will not resolve on another machine`, 'SKILL.md', line, column);
       continue;
