@@ -1,0 +1,32 @@
+name: SkillPort
+description: Portability test for agent skills across Claude Code, Codex and Cursor
+author: helenanova
+branding:
+  icon: check-circle
+  color: green
+inputs:
+  skill:
+    description: Path to the skill directory to check
+    required: true
+  harness:
+    description: Comma-separated harnesses to test (default all)
+    required: false
+    default: ''
+  format:
+    description: Report format (text, json, markdown, sarif)
+    required: false
+    default: text
+runs:
+  using: composite
+  steps:
+    - name: Run SkillPort
+      shell: bash
+      run: |
+        args=("${{ github.action_path }}/bin/skillport.js" check "${{ inputs.skill }}")
+        if [ -n "${{ inputs.harness }}" ]; then args+=(--harness "${{ inputs.harness }}"); fi
+        case "${{ inputs.format }}" in
+          json) args+=(--json);;
+          markdown) args+=(--markdown);;
+          sarif) args+=(--sarif);;
+        esac
+        node "${args[@]}"
