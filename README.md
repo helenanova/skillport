@@ -96,7 +96,7 @@ npx skillport check my-skill --sarif      # SARIF 2.1.0 for code scanning
 npx skillport check my-skill --out report.md
 ```
 
-The repo's own CI publishes the Markdown report for all twenty-six bundled fixtures
+The repo's own CI publishes the Markdown report for all twenty-nine bundled fixtures
 to the GitHub Actions job summary on every push.
 
 ### Code scanning (SARIF)
@@ -114,7 +114,23 @@ pull request annotations:
 Diagnostics carry `file:line:column` positions, so annotations land on the
 exact manifest line.
 
-## The twenty-six fixtures
+## GitHub Action
+
+This repository is also a composite action:
+
+```yaml
+- uses: actions/checkout@v5
+- uses: helenanova/skillport@<full-commit-sha>
+  with:
+    skill: ./skills/my-skill
+    # harness: claude-code,codex   # optional, default all
+    # format: sarif                # optional: text, json, markdown, sarif
+```
+
+No install step is needed; the action runs the bundled CLI with the runner's
+Node.js. Pin a full commit SHA for now - release tags are not published yet.
+
+## The twenty-nine fixtures
 
 `fixtures/` ships the failures we kept hitting by hand, so the tool is tested
 against real breakage: missing `SKILL.md`, broken reference paths, missing
@@ -163,9 +179,23 @@ remain checked. Absolute paths, parent escapes and escaping symlinks still fail.
 An exact marker outside a code fence that does not attach to an eligible block
 emits `example-marker-unused` with its line number; it does not change the verdict.
 Marker text inside a fenced example is treated as example content, not a directive.
-References in prose remain checked, including text describing an example; there
-is no prose-region marker. Move template links into an explicitly marked
+Move template links into an explicitly marked
 Markdown block if they should not be checked as bundled dependencies.
+
+### Ignoring one exact path
+
+When a single path is a placeholder rather than a bundled dependency, name it
+with an `ignore-path` directive anywhere in `SKILL.md`:
+
+```markdown
+<!-- skillport:ignore-path references/template.md -->
+```
+
+The directive suppresses the bundled-file lookup for that exact path only,
+whether it appears in prose or as a Markdown link. Like a marked example, it
+never suppresses absolute paths, parent escapes or escaping symlinks. A
+directive that matches no reference warns as `ignore-path-unused`, so stale
+directives do not pile up silently.
 
 ## What SkillPort is not
 
