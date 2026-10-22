@@ -1,69 +1,8 @@
 {
-  "valid-minimal": {
-    "ok": true
-  },
-  "valid-full": {
-    "ok": true
-  },
-  "spec-metadata": {
-    "ok": true
-  },
-  "reference-punctuation": {
-    "ok": true
-  },
-  "markdown-space-reference": {
-    "ok": true
-  },
-  "missing-markdown-space-reference": {
+  "absolute-input-path": {
     "ok": false,
     "rules": [
-      "ref-exists"
-    ]
-  },
-  "script-data": {
-    "ok": true
-  },
-  "symlink-escape": {
-    "ok": false,
-    "rules": [
-      "symlink-escape"
-    ]
-  },
-  "compatibility-oversized": {
-    "ok": false,
-    "rules": [
-      "compatibility-format"
-    ]
-  },
-  "metadata-empty-value": {
-    "ok": false,
-    "rules": [
-      "metadata-format"
-    ]
-  },
-  "missing-skill-md": {
-    "ok": false,
-    "rules": [
-      "skill-md-exists"
-    ]
-  },
-  "broken-reference-path": {
-    "ok": false,
-    "rules": [
-      "ref-exists"
-    ]
-  },
-  "missing-frontmatter": {
-    "ok": false,
-    "rules": [
-      "frontmatter-name",
-      "frontmatter-description"
-    ]
-  },
-  "invalid-name": {
-    "ok": false,
-    "rules": [
-      "name-format"
+      "no-absolute-paths"
     ]
   },
   "absolute-path": {
@@ -72,19 +11,43 @@
       "no-absolute-paths"
     ]
   },
-  "script-syntax-error": {
-    "ok": false,
-    "steps": [
-      "script scripts/rename.js"
-    ]
-  },
-  "oversized-description": {
+  "academy-guide": {
     "ok": false,
     "rules": [
-      "description-length"
+      "ref-exists"
     ]
   },
-  "missing-script-entry": {
+  "brand-guidelines": {
+    "ok": true
+  },
+  "broken-reference-path": {
+    "ok": false,
+    "rules": [
+      "ref-exists"
+    ]
+  },
+  "compatibility-oversized": {
+    "ok": false,
+    "rules": [
+      "compatibility-format"
+    ]
+  },
+  "description-not-string": {
+    "ok": false,
+    "rules": [
+      "description-format"
+    ]
+  },
+  "discernment-nudge": {
+    "ok": true
+  },
+  "duplicate-frontmatter-key": {
+    "ok": false,
+    "rules": [
+      "frontmatter-parse"
+    ]
+  },
+  "example-template-link": {
     "ok": false,
     "rules": [
       "ref-exists"
@@ -96,21 +59,28 @@
       "no-absolute-paths"
     ]
   },
-  "absolute-input-path": {
-    "ok": false,
+  "ignore-path-unused": {
+    "ok": true,
     "rules": [
-      "no-absolute-paths"
+      "ignore-path-unused"
     ]
   },
-  "mixed-input-output-path": {
+  "ignored-prose-path": {
+    "ok": true
+  },
+  "invalid-name": {
     "ok": false,
     "rules": [
-      "no-absolute-paths"
+      "name-format"
     ]
   },
-  "example-template-link": {
+  "markdown-space-reference": {
+    "ok": true
+  },
+  "marked-example-prose-reference": {
     "ok": false,
     "rules": [
+      "marked-example",
       "ref-exists"
     ]
   },
@@ -120,38 +90,86 @@
       "marked-example"
     ]
   },
+  "metadata-empty-value": {
+    "ok": false,
+    "rules": [
+      "metadata-format"
+    ]
+  },
+  "missing-frontmatter": {
+    "ok": false,
+    "rules": [
+      "frontmatter-name",
+      "frontmatter-description"
+    ]
+  },
+  "missing-markdown-space-reference": {
+    "ok": false,
+    "rules": [
+      "ref-exists"
+    ]
+  },
+  "missing-script-entry": {
+    "ok": false,
+    "rules": [
+      "ref-exists"
+    ]
+  },
+  "missing-skill-md": {
+    "ok": false,
+    "rules": [
+      "skill-md-exists"
+    ]
+  },
+  "mixed-input-output-path": {
+    "ok": false,
+    "rules": [
+      "no-absolute-paths"
+    ]
+  },
   "orphan-example-marker": {
     "ok": true,
     "rules": [
       "example-marker-unused"
     ]
   },
-  "marked-example-prose-reference": {
+  "oversized-description": {
     "ok": false,
     "rules": [
-      "marked-example",
-      "ref-exists"
+      "description-length"
     ]
   },
-  "duplicate-frontmatter-key": {
-    "ok": false,
-    "rules": [
-      "frontmatter-parse"
-    ]
-  },
-  "description-not-string": {
-    "ok": false,
-    "rules": [
-      "description-format"
-    ]
-  },
-  "ignored-prose-path": {
+  "reference-punctuation": {
     "ok": true
   },
-  "ignore-path-unused": {
-    "ok": true,
-    "rules": [
-      "ignore-path-unused"
+  "requesting-code-review": {
+    "ok": true
+  },
+  "script-data": {
+    "ok": true
+  },
+  "script-syntax-error": {
+    "ok": false,
+    "steps": [
+      "script scripts/rename.js"
     ]
+  },
+  "spec-metadata": {
+    "ok": true
+  },
+  "symlink-escape": {
+    "ok": false,
+    "rules": [
+      "symlink-escape"
+    ]
+  },
+  "valid-full": {
+    "ok": true
+  },
+  "valid-minimal": {
+    "ok": true
+  },
+  "verification-before-completion": {
+    "ok": true
   }
 }
