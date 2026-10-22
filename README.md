@@ -96,7 +96,7 @@ npx skillport check my-skill --sarif      # SARIF 2.1.0 for code scanning
 npx skillport check my-skill --out report.md
 ```
 
-The repo's own CI publishes the Markdown report for all twenty-nine bundled fixtures
+The repo's own CI publishes the Markdown report for all thirty-four bundled fixtures
 to the GitHub Actions job summary on every push.
 
 ### Code scanning (SARIF)
@@ -130,7 +130,7 @@ This repository is also a composite action:
 No install step is needed; the action runs the bundled CLI with the runner's
 Node.js. Pin a full commit SHA for now - release tags are not published yet.
 
-## The twenty-nine fixtures
+## The thirty-four fixtures
 
 `fixtures/` ships the failures we kept hitting by hand, so the tool is tested
 against real breakage: missing `SKILL.md`, broken reference paths, missing
@@ -138,6 +138,23 @@ frontmatter, invalid names, absolute paths, script syntax errors, oversized
 descriptions, declared-but-missing scripts, Markdown paths with spaces, escaping
 symlinks and spec field limits - plus known-good skills.
 `npm run check:fixtures` asserts every fixture produces its expected verdict.
+
+### Real-world corpus
+
+Five of the fixtures are verbatim snapshots of public skills, pinned by
+commit in `fixtures/corpus-manifest.json`:
+
+- `brand-guidelines`, `academy-guide` and `discernment-nudge` from
+  [anthropics/skills](https://github.com/anthropics/skills) (Apache-2.0,
+  per-skill `LICENSE.txt` copied along)
+- `verification-before-completion` and `requesting-code-review` from
+  [obra/superpowers](https://github.com/obra/superpowers) (MIT)
+
+The corpus guards against regressions on skills written outside this repo;
+`academy-guide` and `discernment-nudge` use folded block-scalar descriptions.
+One finding is recorded rather than fixed: `academy-guide`'s placeholder link
+`[Title](URL)` is reported as `ref-exists`. Snapshot files are never edited -
+re-snapshot from the pinned source instead.
 
 ## Generated output paths
 
@@ -211,8 +228,11 @@ Not a marketplace, not a security scanner, not a skill registry. It answers
 
 ## Known MVP trade-offs
 
-- The frontmatter parser covers scalar keys, block lists, and one-level
-  `metadata` mappings, not full YAML.
+- The frontmatter parser covers scalar keys, block lists, one-level
+  `metadata` mappings, block scalars (`|` and `>` with `-` and `+` chomping),
+  inline lists and one-level inline maps, and boolean/null coercion. Numbers
+  and dates stay strings, and anchors, tags and nested collections are not
+  supported - it is still not a general YAML parser.
 - Cursor support is static-only: Cursor consumes skills as converted rules,
   and the converter itself is on the roadmap.
 
