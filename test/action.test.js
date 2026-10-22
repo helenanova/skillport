@@ -6,8 +6,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
-const action = await readFile(path.join(root, 'action.yml'), 'utf8');
-const readme = await readFile(path.join(root, 'README.md'), 'utf8');
+const action = (await readFile(path.join(root, 'action.yml'), 'utf8')).replaceAll('\r\n', '\n');
+const readme = (await readFile(path.join(root, 'README.md'), 'utf8')).replaceAll('\r\n', '\n');
 
 test('action.yml declares a composite action running the bundled CLI', () => {
   assert.match(action, /^name: SkillPort$/m);
