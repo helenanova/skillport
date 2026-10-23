@@ -114,6 +114,38 @@ pull request annotations:
 Diagnostics carry `file:line:column` positions, so annotations land on the
 exact manifest line.
 
+## Many skills and baselines
+
+Check every skill in a repo in one run; each skill gets its own report and the
+exit code fails if any skill fails:
+
+```sh
+npx skillport check skills/* 
+npx skillport check skills/a skills/b --json   # array of reports
+npx skillport check skills/a skills/b --sarif  # one SARIF run per skill
+```
+
+Adopt SkillPort without fixing everything first by baselining known issues:
+
+```json
+{
+  "suppressions": [
+    { "rule": "ref-exists", "file": "SKILL.md", "message": "referenced file \"URL\"" }
+  ]
+}
+```
+
+```sh
+npx skillport check skills/academy --baseline skillport-baseline.json
+```
+
+A suppression matches on `rule` (required), exact `file` and a `message`
+substring (both optional). Suppressed issues stay visible as a
+`Baselined: N known issue(s) suppressed` line and in the JSON report's
+`baselined` array - they are never hidden. Entries that no longer match
+anything warn on stderr, so a stale baseline cannot silently grow.
+Failing smoke steps cannot be baselined.
+
 ## GitHub Action
 
 This repository is also a composite action:
