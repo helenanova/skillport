@@ -1,13 +1,13 @@
 import { fileURLToPath } from 'node:url';
 import { promises as fs } from 'node:fs';
-import { checkSkill, DEFAULT_HARNESSES } from './index.js';
+import { checkSkill, applyBaseline, DEFAULT_HARNESSES } from './index.js';
 import { formatText, formatMarkdown } from './report.js';
-import { formatSarif } from './sarif.js';
+import { formatSarif, formatSarifRuns } from './sarif.js';
 import { withFixture } from './fixtures.js';
 
 const FIXTURE_FLAGS = new Set(['--json']);
 const CHECK_FLAGS = new Set(['--json', '--markdown', '--sarif', '--no-smoke']);
-const CHECK_VALUE_FLAGS = new Set(['--harness', '--out', '--output-path']);
+const CHECK_VALUE_FLAGS = new Set(['--harness', '--out', '--output-path', '--baseline']);
 
 function unknownOption(args, flags, valueFlags) {
   for (let i = 0; i < args.length; i++) {
@@ -25,7 +25,7 @@ function unknownOption(args, flags, valueFlags) {
 const HELP = `SkillPort - portability test for agent skills
 
 Usage:
-  skillport check <skill-dir> [options]   Test one skill across agent harnesses
+  skillport check <skill-dir>... [options]  Test one or more skills across agent harnesses
   skillport fixtures [--json]             Run the bundled example fixtures (demo/self-test)
   skillport --version                     Print version
   skillport --help                        This help
@@ -33,6 +33,7 @@ Usage:
 Options for "check":
   --harness <a,b,c>   Harnesses to test (default: ${DEFAULT_HARNESSES.join(',')})
   --output-path <path> Declare an exact generated /tmp/ output path (repeatable; warns)
+  --baseline <file>  Suppress known issues listed in a baseline JSON file (repeatable use not supported)
   --no-smoke          Skip smoke tests (static checks only)
   --json              Machine-readable report to stdout
   --markdown          GitHub-Flavored Markdown report to stdout
@@ -100,9 +101,18 @@ export async function main(argv) {
   }
 
   if (cmd === 'check') {
-    const target = args[args.indexOf('check') + 1];
-    if (!target || target.startsWith('-')) {
-      process.stderr.write('error: "check" needs a skill directory\n\n' + HELP);
+    const checkIdx = args.indexOf('check');
+    const targets = [];
+    for (let i = checkIdx + 1; i < args.length; i++) {
+      const a = args[i];
+      if (CHECK_VALUE_FLAGS.has(a)) {
+        i++;
+        continue;
+      }
+      if (!a.startsWith('-')) targets.push(a);
+    }
+    if (targets.length === 0) {
+      process.stderr.write('error: "check" needs at least one skill directory\n\n' + HELP);
       return 2;
     }
     const unknown = unknownOption(args, CHECK_FLAGS, CHECK_VALUE_FLAGS);
@@ -122,6 +132,27 @@ export async function main(argv) {
     const harnesses = hIdx !== -1 ? args[hIdx + 1].split(',').map((s) => s.trim()) : undefined;
     const smoke = !args.includes('--no-smoke');
 
+    const bIdx = args.indexOf('--baseline');
+    if (bIdx !== -1 && (!args[bIdx + 1] || args[bIdx + 1].startsWith('-'))) {
+      process.stderr.write('error: --baseline needs a baseline JSON file path\n');
+      return 2;
+    }
+    let suppressions = [];
+    if (bIdx !== -1) {
+      try {
+        const parsed = JSON.parse(await fs.readFile(args[bIdx + 1], 'utf8'));
+        if (!Array.isArray(parsed.suppressions)) throw new Error('baseline file needs a "suppressions" array');
+        for (const [i, entry] of parsed.suppressions.entries()) {
+          if (!entry || typeof entry.rule !== 'string' || !entry.rule) {
+            throw new Error(`baseline suppression #${i + 1} needs a "rule" string`);
+          }
+        }
+        suppressions = parsed.suppressions;
+      } catch (err) {
+        process.stderr.write(`error: cannot read baseline ${JSON.stringify(args[bIdx + 1])}: ${err.message}\n`);
+        return 2;
+      }
+    }
     const outputPaths = [];
     for (let i = 0; i < args.length; i++) {
       if (args[i] === '--output-path') {
@@ -132,17 +163,34 @@ export async function main(argv) {
         outputPaths.push(args[++i]);
       }
     }
-    let result;
-    try {
-      result = await checkSkill(target, { harnesses, smoke, outputPaths });
-    } catch (err) {
-      process.stderr.write(`error: ${err.message}\n`);
-      return 2;
+    const results = [];
+    const used = new Set();
+    for (const target of targets) {
+      let result;
+      try {
+        result = await checkSkill(target, { harnesses, smoke, outputPaths });
+      } catch (err) {
+        process.stderr.write(`error: ${err.message}\n`);
+        return 2;
+      }
+      if (suppressions.length > 0) result = applyBaseline(result, suppressions, used);
+      results.push(result);
+    }
+    for (const [i, entry] of suppressions.entries()) {
+      if (!used.has(i)) {
+        process.stderr.write(`warning: baseline entry #${i + 1} (${entry.rule}) matched no issue (stale)\n`);
+      }
     }
 
-    const rendered = json ? JSON.stringify(result, null, 2)
-      : sarif ? formatSarif(result, { version: await packageVersion() })
-      : markdown ? formatMarkdown(result) : formatText(result);
+    const multi = results.length > 1;
+    const rendered = json ? JSON.stringify(multi ? results : results[0], null, 2)
+      : sarif ? (multi ? formatSarifRuns(results, { version: await packageVersion() }) : formatSarif(results[0], { version: await packageVersion() }))
+      : (() => {
+          const fmt = markdown ? formatMarkdown : formatText;
+          const body = results.map((r) => fmt(r)).join('\n\n');
+          const passed = results.filter((r) => r.ok).length;
+          return multi ? `${body}\n\nOverall: ${passed}/${results.length} skills pass` : body;
+        })();
     process.stdout.write(rendered + '\n');
     if (outFile) {
       try {
@@ -152,7 +200,7 @@ export async function main(argv) {
         return 2;
       }
     }
-    return result.ok ? 0 : 1;
+    return results.every((r) => r.ok) ? 0 : 1;
   }
 
   process.stderr.write(`error: unknown command "${cmd}"\n\n` + HELP);
