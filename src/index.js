@@ -62,4 +62,43 @@ export async function checkSkill(skillDir, options = {}) {
   };
 }
 
+// Suppress known issues listed in a baseline file. A suppression matches on
+// rule (required), exact file (optional) and message substring (optional).
+// Suppressed issues are moved to report.baselined, never silently dropped.
+// Pass a shared `used` set to track consumed entries across several reports.
+export function applyBaseline(report, suppressions, used = new Set()) {
+  const baselined = [];
+  const suppress = (issues) => (issues || []).filter((issue) => {
+    const idx = suppressions.findIndex((s, i) => !used.has(i) &&
+      s.rule === issue.rule &&
+      (!s.file || s.file === issue.file) &&
+      (!s.message || (issue.message || '').includes(s.message)));
+    if (idx === -1) return true;
+    used.add(idx);
+    baselined.push(issue);
+    return false;
+  });
+
+  const next = { ...report, static: { ...report.static, issues: suppress(report.static?.issues) } };
+  const harnesses = {};
+  for (const [id, h] of Object.entries(report.harnesses || {})) {
+    const issues = suppress(h.issues);
+    const failed =
+      issues.some((i) => i.level === 'error') ||
+      (h.steps || []).some((s) => s.ok === false) ||
+      next.static.issues.some((i) => i.level === 'error');
+    harnesses[id] = { ...h, issues, ok: !failed };
+  }
+  next.harnesses = harnesses;
+  next.baselined = [...(report.baselined || []), ...baselined];
+
+  const allIssues = [...next.static.issues, ...Object.values(harnesses).flatMap((h) => h.issues)];
+  const errors = allIssues.filter((i) => i.level === 'error').length +
+    Object.values(harnesses).flatMap((h) => h.steps || []).filter((s) => s.ok === false).length;
+  const warnings = allIssues.filter((i) => i.level === 'warning').length;
+  next.summary = { errors, warnings };
+  next.ok = errors === 0;
+  return next;
+}
+
 export { DEFAULT_HARNESSES };
