@@ -44,6 +44,16 @@ export function formatSarif(result, { version } = {}) {
   return render(result, version, rules, results);
 }
 
+// Multi-skill SARIF: one run per skill, same schema and driver metadata.
+export function formatSarifRuns(reports, { version } = {}) {
+  const runs = reports.map((r) => JSON.parse(formatSarif(r, { version })).runs[0]);
+  return JSON.stringify({
+    $schema: SCHEMA,
+    version: '2.1.0',
+    runs,
+  }, null, 2);
+}
+
 function render(result, version, rules, results) {
   const driver = {
     name: 'SkillPort',
