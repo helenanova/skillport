@@ -31,7 +31,7 @@
         "LICENSE.txt",
         "SKILL.md"
       ],
-      "note": "Folded block scalar description (description: >). One documented finding: the placeholder link [Title](URL) in a blockquote example is reported as ref-exists at SKILL.md:82:40. Recorded as a known false positive candidate, not edited, because corpus files stay verbatim."
+      "note": "Folded block scalar description (description: >). Passes cleanly since placeholder link targets ([Title](URL) in a blockquote example) stopped counting as file references."
     },
     "discernment-nudge": {
       "source": "anthropics/skills",
