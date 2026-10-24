@@ -25,15 +25,15 @@ test('applyBaseline suppresses by rule and recounts the verdict', async () => {
 });
 
 test('applyBaseline narrows by file and message substring', async () => {
-  const report = await checkSkill(fx('academy-guide'));
+  const report = await checkSkill(fx('broken-reference-path'));
   const miss = applyBaseline(report, [{ rule: 'ref-exists', file: 'other.md' }]);
   assert.equal(miss.ok, false);
-  const hit = applyBaseline(report, [{ rule: 'ref-exists', file: 'SKILL.md', message: '"URL"' }]);
+  const hit = applyBaseline(report, [{ rule: 'ref-exists', file: 'SKILL.md', message: 'style-guide.md' }]);
   assert.equal(hit.ok, true);
 });
 
 test('a shared used set leaves unmatched entries stale', async () => {
-  const report = await checkSkill(fx('academy-guide'));
+  const report = await checkSkill(fx('broken-reference-path'));
   const used = new Set();
   const suppressions = [
     { rule: 'ref-exists' },
@@ -91,12 +91,12 @@ test('multi-skill --sarif emits one run per skill', async () => {
   assert.equal(sarif.runs.length, 2);
 });
 
-test('--baseline suppresses a documented corpus finding', async () => {
+test('--baseline suppresses a documented finding', async () => {
   const dir = await mkdtemp(path.join(os.tmpdir(), 'skillport-baseline-'));
   try {
     const file = path.join(dir, 'baseline.json');
-    await writeFile(file, JSON.stringify({ suppressions: [{ rule: 'ref-exists', file: 'SKILL.md', message: '"URL"' }] }));
-    const { stdout } = await run('node', [bin, 'check', fx('academy-guide'), '--baseline', file]);
+    await writeFile(file, JSON.stringify({ suppressions: [{ rule: 'ref-exists', file: 'SKILL.md', message: 'style-guide.md' }] }));
+    const { stdout } = await run('node', [bin, 'check', fx('broken-reference-path'), '--baseline', file]);
     assert.match(stdout, /Result: PASS/);
     assert.match(stdout, /Baselined: 1 known issue\(s\) suppressed/);
   } finally {
