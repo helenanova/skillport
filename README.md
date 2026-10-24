@@ -68,7 +68,8 @@ SkillPort main branch, so pin a commit or tag for reproducible CI after reviewin
 
 - `SKILL.md` exists and its frontmatter parses
 - required `name` / `description` keys, name slug format and length caps
-- every referenced file (`references/...`, `scripts/...`, markdown links) exists
+- every referenced file (`references/...`, `scripts/...`, markdown links) exists;
+  obvious placeholder targets (`[Title](URL)` and friends) are not files
 - no absolute or machine-specific paths, no escaping the skill directory
 
 **Harness rules**
@@ -184,9 +185,7 @@ commit in `fixtures/corpus-manifest.json`:
 
 The corpus guards against regressions on skills written outside this repo;
 `academy-guide` and `discernment-nudge` use folded block-scalar descriptions.
-One finding is recorded rather than fixed: `academy-guide`'s placeholder link
-`[Title](URL)` is reported as `ref-exists`. Snapshot files are never edited -
-re-snapshot from the pinned source instead.
+Snapshot files are never edited - re-snapshot from the pinned source instead.
 
 ## Generated output paths
 
