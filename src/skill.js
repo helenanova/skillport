@@ -164,6 +164,8 @@ function collectReferenceDetails(source) {
       // A malformed percent escape remains literal and is checked as written.
     }
     if (/^[A-Za-z][A-Za-z0-9+.-]*:/.test(target) && !/^[A-Za-z]:[\\/]/.test(target)) continue;
+    // Obvious placeholder targets in documentation examples are not files.
+    if (/^(url|uri|link|path|file|title|todo|tbd)$/i.test(target)) continue;
     if (!path.isAbsolute(target) && !/^[A-Za-z]:[\\/]/.test(target)) {
       target = path.posix.normalize(target);
     }
