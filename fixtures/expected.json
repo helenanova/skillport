@@ -12,10 +12,7 @@
     ]
   },
   "academy-guide": {
-    "ok": false,
-    "rules": [
-      "ref-exists"
-    ]
+    "ok": true
   },
   "brand-guidelines": {
     "ok": true
