@@ -4,6 +4,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { checkSkill } from '../src/index.js';
 import { withFixture } from '../src/fixtures.js';
+import { runStaticChecks } from '../src/checks/static.js';
+import { mkdtemp, writeFile, rm } from 'node:fs/promises';
+import os from 'node:os';
 import { symlinksSupported, SYMLINK_SKIP } from './helpers/links.js';
 
 const canSymlink = await symlinksSupported();
@@ -186,4 +189,41 @@ test('output config cannot hide a parent escape or escaping symlink', { skip: ca
     checkSkill(dir, { outputPaths: ['/tmp/unused.html'] }));
   assert.equal(r.ok, false);
   assert.ok(r.static.issues.some((i) => i.rule === 'symlink-escape'));
+});
+
+const checkRaw = (raw) => runStaticChecks({
+  hasSkillMd: true, frontmatterErrors: [],
+  frontmatter: { name: 'path-scope', description: 'Pin the documented absolute path rule scope.' },
+  dirName: 'path-scope', raw, body: raw, files: [], escapingSymlinks: [],
+}, { outputPaths: [] });
+
+test('path roots outside the no-absolute-paths scope stay passing (pinned behavior)', () => {
+  // The rule currently covers /Users, /home, /opt, /var and /tmp. /usr and
+  // /etc are not checked; expanding coverage could flag ordinary shebang
+  // examples such as /usr/bin/env, so broader coverage is a design decision.
+  const okIssues = checkRaw('Run `#!/usr/bin/env node` and read `/etc/hosts`.');
+  assert.equal(okIssues.some((i) => i.rule === 'no-absolute-paths'), false);
+  const badIssues = checkRaw('Read `/home/alex/private.csv`.');
+  assert.ok(badIssues.some((i) => i.rule === 'no-absolute-paths'));
+});
+
+test('manifest parse errors are counted once across static and Codex checks', async () => {
+  const tmp = await mkdtemp(path.join(os.tmpdir(), 'skillport-parse-'));
+  try {
+    await writeFile(path.join(tmp, 'SKILL.md'),
+      '---\nname: skillport-parse\ndescription: a demo skill for parse error dedupe\n- bogus\n---\nx\n');
+    const r = await checkSkill(tmp, { smoke: false });
+    const parseErrors = r.static.issues.filter((i) => i.rule === 'frontmatter-parse');
+    assert.equal(parseErrors.length, 1);
+    const cx = r.harnesses.codex.issues.filter((i) => i.rule === 'cx-strict-frontmatter');
+    assert.equal(cx.length, 1); // still shown for context
+    assert.equal(cx[0].duplicate, true);
+    const counted = [
+      ...r.static.issues,
+      ...Object.values(r.harnesses).flatMap((h) => h.issues),
+    ].filter((i) => i.level === 'error' && !i.duplicate).length;
+    assert.equal(r.summary.errors, counted);
+  } finally {
+    await rm(tmp, { recursive: true, force: true });
+  }
 });

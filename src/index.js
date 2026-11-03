@@ -24,13 +24,27 @@ export async function checkSkill(skillDir, options = {}) {
 
   const staticIssues = runStaticChecks(skill, { outputPaths: options.outputPaths || [] });
   const harnesses = {};
+  // Manifest parse errors are already reported once as static
+  // frontmatter-parse issues; a harness restating the same parse failure is
+  // shown for context but must not be counted twice in the summary.
+  const parseMessages = new Set((skill.frontmatterErrors || []).map((e) => e.message));
+  const markDuplicates = (issues) => {
+    for (const issue of issues) {
+      if (issue.rule === 'cx-strict-frontmatter' &&
+          parseMessages.has(issue.message.replace(/^strict manifest parse fails: /, ''))) {
+        issue.duplicate = true;
+      }
+    }
+    return issues;
+  };
+  const counted = (issues) => issues.filter((i) => !i.duplicate);
 
   for (const id of harnessIds) {
     const harness = HARNESSES[id];
     if (!harness) {
       throw new Error(`unknown harness "${id}". Known: ${DEFAULT_HARNESSES.join(', ')}`);
     }
-    const issues = skill.hasSkillMd ? harness.staticChecks(skill) : [];
+    const issues = markDuplicates(skill.hasSkillMd ? harness.staticChecks(skill) : []);
     const result = { label: harness.label, issues, steps: [], ok: true, smokeTested: false };
     if (runSmoke && harness.smoke && skill.escapingSymlinks.length === 0) {
       result.smokeTested = true;
@@ -48,9 +62,9 @@ export async function checkSkill(skillDir, options = {}) {
     ...staticIssues,
     ...Object.values(harnesses).flatMap((h) => h.issues),
   ];
-  const errors = allIssues.filter((i) => i.level === 'error').length +
+  const errors = counted(allIssues).filter((i) => i.level === 'error').length +
     Object.values(harnesses).flatMap((h) => h.steps).filter((s) => s.ok === false).length;
-  const warnings = allIssues.filter((i) => i.level === 'warning').length;
+  const warnings = counted(allIssues).filter((i) => i.level === 'warning').length;
 
   return {
     skillDir,
@@ -93,9 +107,10 @@ export function applyBaseline(report, suppressions, used = new Set()) {
   next.baselined = [...(report.baselined || []), ...baselined];
 
   const allIssues = [...next.static.issues, ...Object.values(harnesses).flatMap((h) => h.issues)];
-  const errors = allIssues.filter((i) => i.level === 'error').length +
+  const countedIssues = allIssues.filter((i) => !i.duplicate);
+  const errors = countedIssues.filter((i) => i.level === 'error').length +
     Object.values(harnesses).flatMap((h) => h.steps || []).filter((s) => s.ok === false).length;
-  const warnings = allIssues.filter((i) => i.level === 'warning').length;
+  const warnings = countedIssues.filter((i) => i.level === 'warning').length;
   next.summary = { errors, warnings };
   next.ok = errors === 0;
   return next;

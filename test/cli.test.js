@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import path from 'node:path';
-import { readFile, mkdtemp, rm } from 'node:fs/promises';
+import { readFile, writeFile, mkdtemp, rm } from 'node:fs/promises';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
@@ -226,3 +226,15 @@ for (const destination of ['missing-parent', 'directory']) {
     }
   });
 }
+
+test('accepts value-taking flags before the command name', async () => {
+  const tmp = await mkdtemp(path.join(os.tmpdir(), 'skillport-cli-'));
+  try {
+    const baseline = path.join(tmp, 'baseline.json');
+    await writeFile(baseline, JSON.stringify({ suppressions: [] }));
+    const { stdout } = await run('node', [bin, '--baseline', baseline, 'check', fx('valid-minimal'), '--no-smoke']);
+    assert.match(stdout, /Result: PASS/);
+  } finally {
+    await rm(tmp, { recursive: true, force: true });
+  }
+});

@@ -266,6 +266,11 @@ Not a marketplace, not a security scanner, not a skill registry. It answers
   supported - it is still not a general YAML parser.
 - Cursor support is static-only: Cursor consumes skills as converted rules,
   and the converter itself is on the roadmap.
+- The `no-absolute-paths` check currently flags `/Users`, `/home`, `/opt`,
+  `/var` and `/tmp` prefixes. Other absolute roots, including `/usr` and
+  `/etc`, are not checked. Expanding coverage could flag ordinary shebang
+  examples such as `/usr/bin/env`, so broader coverage remains a design
+  decision.
 
 ## License
 

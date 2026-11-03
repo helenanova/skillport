@@ -103,3 +103,24 @@ test('metadataKeyLines records the 1-based line of each metadata subkey', () => 
   const { metadataKeyLines } = parseFrontmatter('---\nname: demo\nmetadata:\n  author: one\n  version: "1"\n---\nBody\n');
   assert.deepEqual(metadataKeyLines, { author: 4, version: 5 });
 });
+
+test('parses zero-indented block lists (valid YAML parent indentation)', () => {
+  const input = '---\nname: foo\ndescription: a valid demo skill manifest\nallowed-tools:\n- Bash\n- Read\n---\nx\n';
+  const { data, errors } = parseFrontmatter(input);
+  assert.deepEqual(errors, []);
+  assert.deepEqual(data['allowed-tools'], ['Bash', 'Read']);
+});
+
+test('rejects a zero-indented list item after a scalar value', () => {
+  const input = '---\nname: foo\nallowed-tools: Bash\n- Read\n---\nx\n';
+  const { errors } = parseFrontmatter(input);
+  assert.equal(errors.length, 1);
+  assert.match(errors[0].message, /unparseable frontmatter line/);
+});
+
+test('still rejects a list after a block scalar', () => {
+  const input = '---\nname: foo\ndescription: |\n  wrapped text\n- Read\n---\nx\n';
+  const { errors } = parseFrontmatter(input);
+  assert.equal(errors.length, 1);
+  assert.match(errors[0].message, /unparseable frontmatter line/);
+});

@@ -142,14 +142,25 @@ export function parseFrontmatter(markdown) {
   result.body = markdown.slice(bodyStart);
   const lines = raw.split(/\r?\n/);
   let currentKey = null;
+  // Keys declared with no inline value may take a block sequence at the
+  // parent's indentation (zero indent here), per YAML.
+  const emptyValueKeys = new Set();
   for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
     const line = lines[lineIndex];
     const lineNumber = lineIndex + 2; // line 1 is the opening --- delimiter
     if (!line.trim() || line.trim().startsWith('#')) continue;
-    const listItem = line.match(/^\s+-\s+(.*)$/);
+    const listItem = line.match(/^(\s*)-\s+(.*)$/);
     if (listItem && currentKey) {
+      // A zero-indent list item is only valid as the block-sequence value of
+      // a key declared without an inline value; after a scalar it is invalid
+      // YAML and stays an error instead of silently replacing the scalar.
+      const zeroIndent = listItem[1].length === 0;
+      if (zeroIndent && !emptyValueKeys.has(currentKey)) {
+        fail(`unparseable frontmatter line: ${line.trim()}`, lineNumber);
+        continue;
+      }
       if (!Array.isArray(result.data[currentKey])) result.data[currentKey] = [];
-      result.data[currentKey].push(listItem[1].trim().replace(/^["']|["']$/g, ''));
+      result.data[currentKey].push(listItem[2].trim().replace(/^["']|["']$/g, ''));
       continue;
     }
     const mapItem = line.match(/^  ([A-Za-z0-9_-]+):\s*(.*)$/);
@@ -204,6 +215,7 @@ export function parseFrontmatter(markdown) {
       result.data[kv[1]] = parsed.map;
       continue;
     }
+    if (rawValue === '') emptyValueKeys.add(kv[1]);
     result.data[currentKey] = rawValue === '' ? [] : parseScalar(rawValue);
   }
   return result;

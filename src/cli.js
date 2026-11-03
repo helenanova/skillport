@@ -50,7 +50,21 @@ async function packageVersion() {
 
 export async function main(argv) {
   const args = argv.slice(2);
-  const cmd = args.find((a) => !a.startsWith('-'));
+  // The command is the first non-flag token, skipping values of flags that
+  // take one (e.g. `--baseline base.json check dir` must not read the value
+  // as the command).
+  let cmd = null;
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i];
+    if (CHECK_VALUE_FLAGS.has(a)) {
+      i++;
+      continue;
+    }
+    if (!a.startsWith('-')) {
+      cmd = a;
+      break;
+    }
+  }
 
   if (args.includes('--help') || args.includes('-h')) {
     process.stdout.write(HELP);
